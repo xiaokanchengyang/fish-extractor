@@ -1,11 +1,11 @@
-# Archive environment diagnostic tool for Fish Extractor (fish 4.12+)
+# Archive environment diagnostic tool for Fish Archive Manager (fish 4.12+)
 # Checks system capabilities, available tools, and configuration
 
-function __fish_extractor_doctor --description 'Diagnose archive tool environment and capabilities'
+function doctor --description 'Diagnose archive tool environment and capabilities'
     set -l usage "\
-ext-doctor - Diagnostic tool for Fish Extractor
+doctor - Diagnostic tool for Fish Archive Manager
 
-Usage: ext-doctor [OPTIONS]
+Usage: doctor [OPTIONS]
 
 Options:
   -v, --verbose           Show detailed information
@@ -70,13 +70,13 @@ Description:
 
     # Display header
     test $quiet -eq 0; and begin
-        __fish_extractor_colorize cyan "\n╔════════════════════════════════════════════════╗\n"
-        __fish_extractor_colorize cyan "║        Fish Extractor Environment Doctor       ║\n"
-        __fish_extractor_colorize cyan "╚════════════════════════════════════════════════╝\n"
+        colorize cyan "\n╔════════════════════════════════════════════════╗\n"
+        colorize cyan "║        Fish Archive Manager Environment Doctor ║\n"
+        colorize cyan "╚════════════════════════════════════════════════╝\n"
         echo ""
     end
 
-    set -a report_lines "Fish Extractor Diagnostic Report"
+    set -a report_lines "Fish Archive Manager Diagnostic Report"
     set -a report_lines "Generated: "(date)
     set -a report_lines ""
 
@@ -86,22 +86,22 @@ Description:
     set -l required_ok 0
     
     for cmd in $required
-        if command -q $cmd
+        if has_command $cmd
             set required_ok (math $required_ok + 1)
             if test $quiet -eq 0
                 set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
                 if test $verbose -eq 1; and test -n "$version"
-                    __fish_extractor_colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
+                    colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
                     set -a report_lines "✓ $cmd: $version"
                 else
-                    __fish_extractor_colorize green (printf "  ✓ %-15s OK\n" $cmd)
+                    colorize green (printf "  ✓ %-15s OK\n" $cmd)
                     set -a report_lines "✓ $cmd: OK"
                 end
             end
         else
             set -a missing_required $cmd
             if test $quiet -eq 0
-                __fish_extractor_colorize red (printf "  ✗ %-15s MISSING\n" $cmd)
+                colorize red (printf "  ✗ %-15s MISSING\n" $cmd)
             end
             set -a report_lines "✗ $cmd: MISSING"
         end
@@ -115,22 +115,22 @@ Description:
     set -l important_ok 0
     
     for cmd in $important
-        if command -q $cmd
+        if has_command $cmd
             set important_ok (math $important_ok + 1)
             if test $quiet -eq 0
                 set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
                 if test $verbose -eq 1; and test -n "$version"
-                    __fish_extractor_colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
+                    colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
                     set -a report_lines "✓ $cmd: $version"
                 else
-                    __fish_extractor_colorize green (printf "  ✓ %-15s OK\n" $cmd)
+                    colorize green (printf "  ✓ %-15s OK\n" $cmd)
                     set -a report_lines "✓ $cmd: OK"
                 end
             end
         else
             set -a missing_important $cmd
             if test $quiet -eq 0
-                __fish_extractor_colorize yellow (printf "  ⚠ %-15s missing (recommended)\n" $cmd)
+                colorize yellow (printf "  ⚠ %-15s missing (recommended)\n" $cmd)
             end
             set -a report_lines "⚠ $cmd: missing (recommended)"
         end
@@ -143,14 +143,14 @@ Description:
         echo "\nOptional Tools (Performance & Additional Formats):"
         set -l optional_found 0
         for cmd in $optional
-            if command -q $cmd
+            if has_command $cmd
                 set optional_found (math $optional_found + 1)
                 set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
                 if test -n "$version"
-                    __fish_extractor_colorize cyan (printf "  + %-15s %s\n" $cmd $version)
+                    colorize cyan (printf "  + %-15s %s\n" $cmd $version)
                     set -a report_lines "+ $cmd: $version"
                 else
-                    __fish_extractor_colorize cyan (printf "  + %-15s available\n" $cmd)
+                    colorize cyan (printf "  + %-15s available\n" $cmd)
                     set -a report_lines "+ $cmd: available"
                 end
             else
@@ -165,19 +165,19 @@ Description:
     # Configuration status
     if test $quiet -eq 0
         echo "\nConfiguration:"
-        printf "  FISH_EXTRACTOR_COLOR           = %s\n" (set -q FISH_EXTRACTOR_COLOR; and echo $FISH_EXTRACTOR_COLOR; or echo "auto")
-        printf "  FISH_EXTRACTOR_PROGRESS        = %s\n" (set -q FISH_EXTRACTOR_PROGRESS; and echo $FISH_EXTRACTOR_PROGRESS; or echo "auto")
-        printf "  FISH_EXTRACTOR_DEFAULT_THREADS = %s\n" (set -q FISH_EXTRACTOR_DEFAULT_THREADS; and echo $FISH_EXTRACTOR_DEFAULT_THREADS; or echo "(auto)")
-        printf "  FISH_EXTRACTOR_LOG_LEVEL       = %s\n" (set -q FISH_EXTRACTOR_LOG_LEVEL; and echo $FISH_EXTRACTOR_LOG_LEVEL; or echo "info")
-        printf "  FISH_EXTRACTOR_DEFAULT_FORMAT  = %s\n" (set -q FISH_EXTRACTOR_DEFAULT_FORMAT; and echo $FISH_EXTRACTOR_DEFAULT_FORMAT; or echo "auto")
+        printf "  FISH_ARCHIVE_COLOR           = %s\n" (set -q FISH_ARCHIVE_COLOR; and echo $FISH_ARCHIVE_COLOR; or echo "auto")
+        printf "  FISH_ARCHIVE_PROGRESS        = %s\n" (set -q FISH_ARCHIVE_PROGRESS; and echo $FISH_ARCHIVE_PROGRESS; or echo "auto")
+        printf "  FISH_ARCHIVE_DEFAULT_THREADS = %s\n" (set -q FISH_ARCHIVE_DEFAULT_THREADS; and echo $FISH_ARCHIVE_DEFAULT_THREADS; or echo "(auto)")
+        printf "  FISH_ARCHIVE_LOG_LEVEL       = %s\n" (set -q FISH_ARCHIVE_LOG_LEVEL; and echo $FISH_ARCHIVE_LOG_LEVEL; or echo "info")
+        printf "  FISH_ARCHIVE_DEFAULT_FORMAT  = %s\n" (set -q FISH_ARCHIVE_DEFAULT_FORMAT; and echo $FISH_ARCHIVE_DEFAULT_FORMAT; or echo "auto")
     end
 
     set -a report_lines "Configuration:"
-    set -a report_lines "  FISH_EXTRACTOR_COLOR           = "(set -q FISH_EXTRACTOR_COLOR; and echo $FISH_EXTRACTOR_COLOR; or echo "auto")
-    set -a report_lines "  FISH_EXTRACTOR_PROGRESS        = "(set -q FISH_EXTRACTOR_PROGRESS; and echo $FISH_EXTRACTOR_PROGRESS; or echo "auto")
-    set -a report_lines "  FISH_EXTRACTOR_DEFAULT_THREADS = "(set -q FISH_EXTRACTOR_DEFAULT_THREADS; and echo $FISH_EXTRACTOR_DEFAULT_THREADS; or echo "(auto)")
-    set -a report_lines "  FISH_EXTRACTOR_LOG_LEVEL       = "(set -q FISH_EXTRACTOR_LOG_LEVEL; and echo $FISH_EXTRACTOR_LOG_LEVEL; or echo "info")
-    set -a report_lines "  FISH_EXTRACTOR_DEFAULT_FORMAT  = "(set -q FISH_EXTRACTOR_DEFAULT_FORMAT; and echo $FISH_EXTRACTOR_DEFAULT_FORMAT; or echo "auto")
+    set -a report_lines "  FISH_ARCHIVE_COLOR           = "(set -q FISH_ARCHIVE_COLOR; and echo $FISH_ARCHIVE_COLOR; or echo "auto")
+    set -a report_lines "  FISH_ARCHIVE_PROGRESS        = "(set -q FISH_ARCHIVE_PROGRESS; and echo $FISH_ARCHIVE_PROGRESS; or echo "auto")
+    set -a report_lines "  FISH_ARCHIVE_DEFAULT_THREADS = "(set -q FISH_ARCHIVE_DEFAULT_THREADS; and echo $FISH_ARCHIVE_DEFAULT_THREADS; or echo "(auto)")
+    set -a report_lines "  FISH_ARCHIVE_LOG_LEVEL       = "(set -q FISH_ARCHIVE_LOG_LEVEL; and echo $FISH_ARCHIVE_LOG_LEVEL; or echo "info")
+    set -a report_lines "  FISH_ARCHIVE_DEFAULT_FORMAT  = "(set -q FISH_ARCHIVE_DEFAULT_FORMAT; and echo $FISH_ARCHIVE_DEFAULT_FORMAT; or echo "auto")
     set -a report_lines ""
 
     # System information
@@ -205,19 +205,19 @@ Description:
     if test $verbose -eq 1; and test $quiet -eq 0
         echo "\nSupported Archive Formats:"
         set -l formats
-        command -q tar; and set -a formats "tar"
-        command -q gzip; and set -a formats "tar.gz/tgz"
-        command -q bzip2; and set -a formats "tar.bz2/tbz2"
-        command -q xz; and set -a formats "tar.xz/txz"
-        command -q zstd; and set -a formats "tar.zst/tzst"
-        command -q lz4; and set -a formats "tar.lz4/tlz4"
-        command -q lzip; and set -a formats "tar.lz/tlz"
-        command -q lzop; and set -a formats "tar.lzo/tzo"
-        command -q brotli; and set -a formats "tar.br/tbr"
-        command -q zip; and set -a formats "zip"
-        command -q 7z; and set -a formats "7z"
-        command -q unrar; and set -a formats "rar"
-        command -q bsdtar; and set -a formats "iso/deb/rpm/pkg"
+        has_command tar; and set -a formats "tar"
+        has_command gzip; and set -a formats "tar.gz/tgz"
+        has_command bzip2; and set -a formats "tar.bz2/tbz2"
+        has_command xz; and set -a formats "tar.xz/txz"
+        has_command zstd; and set -a formats "tar.zst/tzst"
+        has_command lz4; and set -a formats "tar.lz4/tlz4"
+        has_command lzip; and set -a formats "tar.lz/tlz"
+        has_command lzop; and set -a formats "tar.lzo/tzo"
+        has_command brotli; and set -a formats "tar.br/tbr"
+        has_command zip; and set -a formats "zip"
+        has_command 7z; and set -a formats "7z"
+        has_command unrar; and set -a formats "rar"
+        has_command bsdtar; and set -a formats "iso/deb/rpm/pkg"
         
         set -a report_lines "Supported Archive Formats:"
         for fmt in $formats
@@ -232,9 +232,9 @@ Description:
         echo "\nPerformance Features:"
         set -l perf_features
         
-        command -q pigz; and set -a perf_features "✓ Parallel gzip (pigz)"; or set -a perf_features "✗ Parallel gzip (pigz not found)"
-        command -q pbzip2; and set -a perf_features "✓ Parallel bzip2 (pbzip2)"; or set -a perf_features "✗ Parallel bzip2 (pbzip2 not found)"
-        command -q pv; and set -a perf_features "✓ Progress viewer (pv)"; or set -a perf_features "✗ Progress viewer (pv not found)"
+        has_command pigz; and set -a perf_features "✓ Parallel gzip (pigz)"; or set -a perf_features "✗ Parallel gzip (pigz not found)"
+        has_command pbzip2; and set -a perf_features "✓ Parallel bzip2 (pbzip2)"; or set -a perf_features "✗ Parallel bzip2 (pbzip2 not found)"
+        has_command pv; and set -a perf_features "✓ Progress viewer (pv)"; or set -a perf_features "✗ Progress viewer (pv not found)"
         
         for feat in $perf_features
             echo "  $feat"
@@ -249,20 +249,20 @@ Description:
         set -a report_lines "Recommendations:"
         
         if test (count $missing_required) -gt 0
-            __fish_extractor_colorize red "⚠ Missing required tools!\n"
+            colorize red "⚠ Missing required tools!\n"
             echo "  Install with your package manager:"
             
             # Detect package manager and provide appropriate command
-            if command -q pacman
+            if has_command pacman
                 echo "    pacman -S "(string join ' ' $missing_required)
                 set -a report_lines "  pacman -S "(string join ' ' $missing_required)
-            else if command -q apt-get
+            else if has_command apt-get
                 echo "    apt-get install "(string join ' ' $missing_required)
                 set -a report_lines "  apt-get install "(string join ' ' $missing_required)
-            else if command -q brew
+            else if has_command brew
                 echo "    brew install "(string join ' ' $missing_required)
                 set -a report_lines "  brew install "(string join ' ' $missing_required)
-            else if command -q dnf
+            else if has_command dnf
                 echo "    dnf install "(string join ' ' $missing_required)
                 set -a report_lines "  dnf install "(string join ' ' $missing_required)
             else
@@ -273,19 +273,19 @@ Description:
         
         if test (count $missing_important) -gt 0
             echo ""
-            __fish_extractor_colorize yellow "💡 Recommended tools to install:\n"
+            colorize yellow "💡 Recommended tools to install:\n"
             echo "  For better format support:"
             
-            if command -q pacman
+            if has_command pacman
                 echo "    pacman -S "(string join ' ' $missing_important)
                 set -a report_lines "  pacman -S "(string join ' ' $missing_important)
-            else if command -q apt-get
+            else if has_command apt-get
                 echo "    apt-get install "(string join ' ' $missing_important)
                 set -a report_lines "  apt-get install "(string join ' ' $missing_important)
-            else if command -q brew
+            else if has_command brew
                 echo "    brew install "(string join ' ' $missing_important)
                 set -a report_lines "  brew install "(string join ' ' $missing_important)
-            else if command -q dnf
+            else if has_command dnf
                 echo "    dnf install "(string join ' ' $missing_important)
                 set -a report_lines "  dnf install "(string join ' ' $missing_important)
             else
@@ -300,15 +300,15 @@ Description:
             set -a report_lines ""
             set -a report_lines "Performance optimization tips:"
             
-            if not command -q pv
+            if not has_command pv
                 echo "  • Install 'pv' for progress indicators"
                 set -a report_lines "  • Install 'pv' for progress indicators"
             end
-            if not command -q pigz
+            if not has_command pigz
                 echo "  • Install 'pigz' for parallel gzip compression"
                 set -a report_lines "  • Install 'pigz' for parallel gzip compression"
             end
-            if not command -q pbzip2
+            if not has_command pbzip2
                 echo "  • Install 'pbzip2' for parallel bzip2 compression"
                 set -a report_lines "  • Install 'pbzip2' for parallel bzip2 compression"
             end
@@ -318,15 +318,15 @@ Description:
             set -a report_lines ""
             set -a report_lines "Configuration suggestions:"
             
-            if not set -q FISH_EXTRACTOR_DEFAULT_THREADS
+            if not set -q FISH_ARCHIVE_DEFAULT_THREADS
                 set -l cores (nproc 2>/dev/null; or sysctl -n hw.ncpu 2>/dev/null; or echo 4)
-                echo "  • Set thread count: set -Ux FISH_EXTRACTOR_DEFAULT_THREADS $cores"
-                set -a report_lines "  • Set thread count: set -Ux FISH_EXTRACTOR_DEFAULT_THREADS $cores"
+                echo "  • Set thread count: set -Ux FISH_ARCHIVE_DEFAULT_THREADS $cores"
+                set -a report_lines "  • Set thread count: set -Ux FISH_ARCHIVE_DEFAULT_THREADS $cores"
             end
             
-            if not set -q FISH_EXTRACTOR_COLOR
-                echo "  • Enable colors: set -Ux FISH_EXTRACTOR_COLOR auto"
-                set -a report_lines "  • Enable colors: set -Ux FISH_EXTRACTOR_COLOR auto"
+            if not set -q FISH_ARCHIVE_COLOR
+                echo "  • Enable colors: set -Ux FISH_ARCHIVE_COLOR auto"
+                set -a report_lines "  • Enable colors: set -Ux FISH_ARCHIVE_COLOR auto"
             end
         end
         set -a report_lines ""
@@ -339,18 +339,18 @@ Description:
         set -l total_important (count $important)
         
         if test (count $missing_required) -eq 0
-            __fish_extractor_colorize green "✓ Core functionality: Ready ($required_ok/$total_required)\n"
+            colorize green "✓ Core functionality: Ready ($required_ok/$total_required)\n"
             set -a report_lines "✓ Core functionality: Ready ($required_ok/$total_required)"
         else
-            __fish_extractor_colorize red "✗ Core functionality: Incomplete ($required_ok/$total_required)\n"
+            colorize red "✗ Core functionality: Incomplete ($required_ok/$total_required)\n"
             set -a report_lines "✗ Core functionality: Incomplete ($required_ok/$total_required)"
         end
         
         if test (count $missing_important) -eq 0
-            __fish_extractor_colorize green "✓ Extended functionality: Ready ($important_ok/$total_important)\n"
+            colorize green "✓ Extended functionality: Ready ($important_ok/$total_important)\n"
             set -a report_lines "✓ Extended functionality: Ready ($important_ok/$total_important)"
         else
-            __fish_extractor_colorize yellow "⚠ Extended functionality: Limited ($important_ok/$total_important)\n"
+            colorize yellow "⚠ Extended functionality: Limited ($important_ok/$total_important)\n"
             set -a report_lines "⚠ Extended functionality: Limited ($important_ok/$total_important)"
         end
         
@@ -359,9 +359,9 @@ Description:
 
     # Export report if requested
     if test $export_report -eq 1
-        set -l report_file "fish-extractor-diagnostic-"(date +%Y%m%d_%H%M%S)".txt"
+        set -l report_file "fish-archive-diagnostic-"(date +%Y%m%d_%H%M%S)".txt"
         printf "%s\n" $report_lines > $report_file
-        __fish_extractor_log info "Diagnostic report exported to: $report_file"
+        log info "Diagnostic report exported to: $report_file"
     end
 
     # Return appropriate exit code

@@ -58,6 +58,11 @@ function run_all_tests
     run_test_suite "$test_dir/test_doctor.fish" "Doctor"
     or set failed_suites (math $failed_suites + 1)
     
+    # Run comprehensive function tests
+    set total_suites (math $total_suites + 1)
+    run_test_suite "$test_dir/test_all_functions.fish" "All Functions"
+    or set failed_suites (math $failed_suites + 1)
+    
     # Summary
     echo "==============================="
     echo "Test Suite Summary"

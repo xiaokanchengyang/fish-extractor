@@ -5,69 +5,91 @@ All notable changes to Fish Archive Manager will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - 2024-01-15
+## [Unreleased]
 
 ### Added
-- Complete rewrite with cleaner, more maintainable code
-- New simplified command names: `extract`, `compress`, `doctor`
-- Comprehensive test suite with 50+ test cases
-- Smart format selection based on content analysis
-- Advanced progress indicators with `pv` integration
-- Archive splitting support for large files
-- Auto-rename functionality for existing files/directories
-- Timestamp support for archive and directory naming
-- Comprehensive checksum generation and verification
-- Enhanced error handling and logging system
-- Detailed diagnostic tool with system capability reporting
-- Context-aware tab completions
-- Parallel processing support for compression/decompression
-- Support for 25+ archive formats
-- Encryption support for ZIP and 7z formats
-- Backup functionality before extraction
-- Dry-run mode for both extract and compress
-- Verbose and quiet output modes
-- Configuration via environment variables
-- Installation script with dependency checking
-- Comprehensive documentation and examples
+- Common functions module for better code organization
+- Enhanced error handling and recovery
+- Comprehensive test suite improvements
 
 ### Changed
-- **BREAKING**: Renamed all commands from `__fish_extractor_*` to simple names
-- **BREAKING**: Changed environment variable prefix from `FISH_EXTRACTOR_` to `FISH_ARCHIVE_`
-- **BREAKING**: Simplified function names following Google naming conventions
-- Improved code organization with separate files for each major function
-- Enhanced Fish 4.12+ feature usage throughout
-- Better error messages and user feedback
-- Optimized performance with parallel tools (pigz, pbzip2)
-- Improved format detection using both extension and MIME type
-- Enhanced smart format selection algorithm
-
-### Removed
-- Old `__fish_extractor_*` function names
-- Redundant code and unused functions
-- Complex nested if/else statements in favor of cleaner patterns
+- Refactored compression and extraction functions
+- Improved code maintainability
+- Better separation of concerns
 
 ### Fixed
-- Memory leaks in large file processing
-- Race conditions in parallel operations
-- Incorrect format detection for some file types
-- Progress bar display issues
-- Thread count calculation errors
-- Path handling edge cases
+- Reduced code duplication
+- Improved error messages
+- Better format detection
 
-## [2.0.0] - 2023-12-01
+## [3.0.0] - 2024-12-15
 
 ### Added
-- Initial release with basic extraction and compression
-- Support for common archive formats
-- Basic progress indicators
-- Simple format detection
+- **Common Functions Module**: Extracted duplicate code into reusable modules
+  - `functions/common/archive_operations.fish` - Shared archive operations
+  - `functions/common/file_operations.fish` - File handling utilities
+  - `functions/common/format_operations.fish` - Format detection and validation
+- **Smart Format Selection**: Automatically chooses optimal compression format
+- **Advanced Progress Indicators**: Beautiful progress bars with `pv` integration
+- **Archive Splitting**: Split large archives into manageable parts
+- **Auto-rename and Timestamp**: Automatic file/directory naming
+- **Comprehensive Checksum**: Generation and verification support
+- **Parallel Processing**: Multi-threaded compression/decompression
+- **25+ Format Support**: Extensive archive format compatibility
+- **Encryption Support**: Password-protected archives for ZIP and 7z
+- **Backup Functionality**: Automatic backup before extraction
+- **Dry-run Mode**: Preview operations before executing
+- **Changelog System**: Organized version history in `changelog/` folder
 
 ### Changed
-- Renamed from "Fish Extractor" to "Fish Archive Manager"
+- **Complete Code Refactor**: Rewritten for better maintainability
+- **Reduced Code Duplication**: Eliminated ~200 lines of duplicate code
+- **Modern Fish 4.12+ Syntax**: Leveraged latest Fish shell features
+- **Better Error Handling**: Unified error management system
+- **Improved Documentation**: Comprehensive guides and examples
+- **Enhanced Test Suite**: More comprehensive testing coverage
 
-## [1.0.0] - 2023-11-01
+### Fixed
+- **Code Organization**: Better separation of concerns
+- **Error Messages**: More descriptive and helpful
+- **Format Detection**: More reliable and comprehensive
+- **Performance**: Optimized resource usage
+- **Maintainability**: Cleaner, more readable code
 
-### Added
-- Initial release
-- Basic archive extraction functionality
-- Support for tar, zip, and 7z formats
+### Removed
+- **Duplicate Code**: Eliminated redundant functions
+- **Outdated Documentation**: Removed obsolete files
+- **Complex Nested Logic**: Simplified control flow
+
+## [2.x.x] - Previous Versions
+
+For historical changes, see [changelog/legacy.md](changelog/legacy.md).
+
+---
+
+## How to Read This Changelog
+
+- **[Unreleased]**: Changes that are not yet released
+- **[Version]**: Released versions with dates
+- **Added**: New features
+- **Changed**: Changes to existing functionality
+- **Deprecated**: Soon-to-be removed features
+- **Removed**: Removed features
+- **Fixed**: Bug fixes
+- **Security**: Security improvements
+
+## Contributing
+
+When adding entries to this changelog, please follow these guidelines:
+
+1. **Use present tense**: "Add feature" not "Added feature"
+2. **Group by type**: Group changes by Added, Changed, Fixed, etc.
+3. **Be descriptive**: Explain what changed and why
+4. **Include links**: Link to issues, PRs, or commits when relevant
+5. **Follow format**: Use the established format for consistency
+
+## Links
+
+- [Keep a Changelog](https://keepachangelog.com/)
+- [Semantic Versioning](https://semver.org/)
+- [Fish Archive Manager Repository](https://github.com/xiaokanchengyang/fish-extractor)

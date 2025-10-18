@@ -7,6 +7,10 @@ source (dirname (status --current-filename))/validation.fish
 source (dirname (status --current-filename))/format_handlers.fish
 # Load error handling
 source (dirname (status --current-filename))/error_handling.fish
+# Load common functions
+source (dirname (status --current-filename))/common/archive_operations.fish
+source (dirname (status --current-filename))/common/file_operations.fish
+source (dirname (status --current-filename))/common/format_operations.fish
 
 function compress --description 'Create archives with intelligent format selection and options'
     set -l usage "\
@@ -173,25 +177,10 @@ Examples:
         return 1
     end
 
-    # Smart format selection
-    if test $smart -eq 1; or test "$format" = auto
-        # Detect from output filename if it has an extension
-        set -l detected (detect_format "$output")
-        if test "$detected" != unknown
-            set format $detected
-            log debug "Detected format from filename: $format"
-        else
-            # Analyze input content
-            set format (smart_format $inputs)
-            log info "Smart format selected: $format"
-            
-            # Update output filename with appropriate extension
-            set output "$output."(string replace tar. '' -- $format)
-        end
-    end
-
-    # Normalize format aliases
-    set format (normalize_format $format)
+    # Smart format selection and normalization
+    set -l format_result (normalize_output_format "$output" $format $smart)
+    set format $format_result[1]
+    set output $format_result[2]
 
     # Resolve thread count
     set -l thread_count (resolve_threads $threads)
@@ -199,76 +188,17 @@ Examples:
     # Validate compression level
     set -l comp_level (validate_level $format $level)
 
-    # Build file list
-    set -l file_list
-    if test -n "$chdir"
-        pushd "$chdir" >/dev/null
-        or begin
-            log error "Failed to change directory to: $chdir"
-            return 1
-        end
-    end
-
-    # Collect input files
-    for input in $inputs
-        if test -e "$input"
-            set -a file_list "$input"
-        else
-            # Try glob expansion
-            set -l expanded (eval echo "$input" 2>/dev/null)
-            for item in $expanded
-                test -e "$item"; and set -a file_list "$item"
-            end
-        end
-    end
-
-    # Apply include/exclude filters
-    if test (count $include_globs) -gt 0
-        set -l filtered
-        for file in $file_list
-            for pattern in $include_globs
-                if string match -q -- $pattern $file
-                    set -a filtered $file
-                    break
-                end
-            end
-        end
-        set file_list $filtered
-    end
-
-    if test (count $exclude_globs) -gt 0
-        set -l filtered
-        for file in $file_list
-            set -l excluded 0
-            for pattern in $exclude_globs
-                if string match -q -- $pattern $file
-                    set excluded 1
-                    break
-                end
-            end
-            test $excluded -eq 0; and set -a filtered $file
-        end
-        set file_list $filtered
-    end
-
-    if test -n "$chdir"
-        popd >/dev/null
-    end
-
-    # Verify we have files to compress
-    if test (count $file_list) -eq 0
-        log error "No files to compress"
+    # Collect and filter files
+    set -l file_list (collect_input_files $inputs $chdir)
+    set file_list (apply_file_filters $file_list $include_globs $exclude_globs)
+    
+    # Validate file list
+    if not validate_file_list $file_list "compress"
         return 1
     end
-
+    
     # Calculate total size
-    set -l total_size 0
-    for file in $file_list
-        if test -f "$file"
-            set -l fsize (get_file_size "$file")
-            set total_size (math $total_size + $fsize)
-        end
-    end
+    set -l total_size (calculate_total_size $file_list)
 
     # Dry run mode
     if test $dry_run -eq 1
@@ -286,29 +216,28 @@ Examples:
         if test $verbose -eq 1
             log debug "  Format: $format"
             log debug "  Compression level: $comp_level"
-            log debug "  Files: "(count $file_list)
-            log debug "  Total size: "(human_size $total_size)
             log debug "  Threads: $thread_count"
         end
+        show_file_statistics $file_list $total_size $verbose $quiet
     end
 
+    # Prepare environment
+    if not prepare_archive_environment "compress" $format $thread_count $verbose
+        return $status
+    end
+    
+    # Validate archive operation
+    if not validate_archive_common "$output" "compress" $format "$password" $encrypt
+        return $status
+    end
+    
+    # Create output directory
+    if not create_output_directory "$output" $quiet
+        return $status
+    end
+    
     # Perform compression
-    set -l compress_opts \
-        "$output" \
-        $file_list \
-        $format \
-        $comp_level \
-        $thread_count \
-        $encrypt \
-        "$password" \
-        "$chdir" \
-        $update \
-        $append \
-        $verbose \
-        $show_progress \
-        $solid
-
-    if create_archive $compress_opts
+    if create_archive "$output" $file_list $format $comp_level $thread_count $encrypt "$password" "$chdir" $update $append $verbose $show_progress $solid
         if test $quiet -eq 0
             set -l out_size (get_file_size "$output")
             set -l ratio 0
@@ -320,15 +249,13 @@ Examples:
         
         # Generate checksum if requested
         if test $gen_checksum -eq 1
-            set -l checksum_file "$output.sha256"
-            log info "Generating checksum: $checksum_file"
-            calculate_hash "$output" sha256 > "$checksum_file"
+            generate_checksum_file "$output" "sha256" $quiet
         end
         
         # Split archive if requested
         if test -n "$split_size"
             log info "Splitting archive into $split_size parts..."
-            if split_archive "$output" "$split_size"
+            if split_archive_file "$output" "$split_size" $quiet
                 log info "✓ Archive split complete"
             else
                 log warn "Failed to split archive"
@@ -361,276 +288,20 @@ function create_archive --description 'Internal: perform actual compression'
     set -l progress $argv[-3]
     set -l solid $argv[-2]
 
-    # Dispatch to format-specific handler
-    if is_tar_format $format
-        # Extract compression component
-        set -l comp_format (string replace "tar." "" -- $format)
-        if test "$comp_format" = "tar"
-            set comp_format "none"
-        end
-        create_tar "$output" $files $comp_format $level $threads $verbose $progress "$chdir" $update
-    else
-        switch $format
-            case zip
-                create_zip "$output" $files $level $encrypt "$password" $verbose $update "$chdir"
-            case 7z
-                create_7z "$output" $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
-            case '*'
-                log error "Unsupported format: $format"
-                return 2
-        end
-    end
+    # Use common archive operation function
+    execute_format_command $format "compress" $output $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
 end
 
 # ============================================================================
 # Format-Specific Compression Functions
 # ============================================================================
 
-function create_tar --description 'Create tar archives with optional compression'
-    set -l output $argv[1]
-    set -l files $argv[2..-9]
-    set -l compressor $argv[-8]
-    set -l level $argv[-7]
-    set -l threads $argv[-6]
-    set -l verbose $argv[-5]
-    set -l progress $argv[-4]
-    set -l chdir $argv[-3]
-    set -l update $argv[-2]
-
-    require_commands tar; or return 127
-
-    # Build tar options
-    set -l tar_opts
-    
-    # Operation mode
-    if test $update -eq 1; and test -f "$output"
-        set -a tar_opts -u  # Update
-    else
-        set -a tar_opts -c  # Create
-    end
-    
-    test $verbose -eq 1; and set -a tar_opts -v
-    test -n "$chdir"; and set -a tar_opts -C "$chdir"
-
-    # Handle compression
-    if test "$compressor" != none
-        switch $compressor
-            case gzip
-                require_commands gzip; or return 127
-                # Try pigz for parallel compression if available
-                if has_command pigz
-                    if test $progress -eq 1; and can_show_progress
-                        tar $tar_opts -f - $files | pigz -$level -p $threads | show_progress_bar 0 > "$output"
-                    else
-                        tar $tar_opts -f - $files | pigz -$level -p $threads > "$output"
-                    end
-                else
-                    if test $progress -eq 1; and can_show_progress
-                        tar $tar_opts -f - $files | gzip -$level | show_progress_bar 0 > "$output"
-                    else
-                        set -a tar_opts -z -f "$output"
-                        env GZIP=-$level tar $tar_opts $files
-                    end
-                end
-                
-            case bzip2
-                require_commands bzip2; or return 127
-                # Try pbzip2 for parallel compression if available
-                if has_command pbzip2
-                    if test $progress -eq 1; and can_show_progress
-                        tar $tar_opts -f - $files | pbzip2 -$level -p$threads | show_progress_bar 0 > "$output"
-                    else
-                        tar $tar_opts -f - $files | pbzip2 -$level -p$threads > "$output"
-                    end
-                else
-                    if test $progress -eq 1; and can_show_progress
-                        tar $tar_opts -f - $files | bzip2 -$level | show_progress_bar 0 > "$output"
-                    else
-                        set -a tar_opts -j -f "$output"
-                        env BZIP2=-$level tar $tar_opts $files
-                    end
-                end
-                
-            case xz
-                require_commands xz; or return 127
-                if test $progress -eq 1; and can_show_progress
-                    tar $tar_opts -f - $files | xz -$level -T$threads | show_progress_bar 0 > "$output"
-                else
-                    set -a tar_opts --use-compress-program="xz -$level -T$threads" -f "$output"
-                    tar $tar_opts $files
-                end
-                
-            case zstd
-                require_commands zstd; or return 127
-                if test $progress -eq 1; and can_show_progress
-                    tar $tar_opts -f - $files | zstd -$level -T$threads -q | show_progress_bar 0 > "$output"
-                else
-                    set -a tar_opts --use-compress-program="zstd -$level -T$threads -q" -f "$output"
-                    tar $tar_opts $files
-                end
-                
-            case lz4
-                require_commands lz4; or return 127
-                if test $progress -eq 1; and can_show_progress
-                    tar $tar_opts -f - $files | lz4 -$level | show_progress_bar 0 > "$output"
-                else
-                    set -a tar_opts --use-compress-program="lz4 -$level" -f "$output"
-                    tar $tar_opts $files
-                end
-                
-            case lzip
-                require_commands lzip; or return 127
-                set -a tar_opts --lzip -f "$output"
-                env LZIP=-$level tar $tar_opts $files
-                
-            case lzop
-                require_commands lzop; or return 127
-                set -a tar_opts --lzop -f "$output"
-                env LZOP=-$level tar $tar_opts $files
-                
-            case brotli
-                require_commands brotli; or return 127
-                if test $progress -eq 1; and can_show_progress
-                    tar $tar_opts -f - $files | brotli -$level | show_progress_bar 0 > "$output"
-                else
-                    tar $tar_opts -f - $files | brotli -$level -o "$output"
-                end
-        end
-    else
-        # Uncompressed tar
-        set -a tar_opts -f "$output"
-        tar $tar_opts $files
-    end
-end
-
-function create_zip --description 'Create ZIP archives'
-    set -l output $argv[1]
-    set -l files $argv[2..-8]
-    set -l level $argv[-7]
-    set -l encrypt $argv[-6]
-    set -l password $argv[-5]
-    set -l verbose $argv[-4]
-    set -l update $argv[-3]
-    set -l chdir $argv[-2]
-
-    require_commands zip; or return 127
-
-    set -l zip_opts
-    
-    # Operation mode
-    if test $update -eq 1; and test -f "$output"
-        set -a zip_opts -u  # Update
-    else
-        set -a zip_opts -r  # Recursive
-    end
-    
-    # Compression level
-    set -a zip_opts -$level
-    
-    # Encryption
-    if test $encrypt -eq 1
-        set -a zip_opts -e
-        if test -n "$password"
-            set -a zip_opts -P "$password"
-        end
-    end
-    
-    # Verbosity
-    test $verbose -eq 0; and set -a zip_opts -q
-
-    # Change directory if needed
-    if test -n "$chdir"
-        pushd "$chdir" >/dev/null
-        zip $zip_opts "$output" $files
-        set -l status_code $status
-        popd >/dev/null
-        return $status_code
-    else
-        zip $zip_opts "$output" $files
-    end
-end
-
-function create_7z --description 'Create 7z archives'
-    set -l output $argv[1]
-    set -l files $argv[2..-10]
-    set -l level $argv[-9]
-    set -l threads $argv[-8]
-    set -l encrypt $argv[-7]
-    set -l password $argv[-6]
-    set -l solid $argv[-5]
-    set -l verbose $argv[-4]
-    set -l update $argv[-3]
-    set -l chdir $argv[-2]
-
-    require_commands 7z; or return 127
-
-    set -l opts
-    
-    # Operation mode
-    if test $update -eq 1; and test -f "$output"
-        set opts u  # Update
-    else
-        set opts a  # Add
-    end
-    
-    # Options
-    set -a opts -y  # Yes to all
-    set -a opts -mx=$level  # Compression level
-    test $threads -gt 1; and set -a opts -mmt=$threads
-    test $solid -eq 1; and set -a opts -ms=on
-    
-    # Encryption
-    if test $encrypt -eq 1
-        set -a opts -mhe=on  # Encrypt headers
-        test -n "$password"; and set -a opts -p"$password"
-    end
-
-    # Change directory if needed
-    if test -n "$chdir"
-        pushd "$chdir" >/dev/null
-        if test $verbose -eq 1
-            7z $opts "$output" $files
-        else
-            7z $opts "$output" $files >/dev/null
-        end
-        set -l status_code $status
-        popd >/dev/null
-        return $status_code
-    else
-        if test $verbose -eq 1
-            7z $opts "$output" $files
-        else
-            7z $opts "$output" $files >/dev/null
-        end
-    end
-end
+# Note: Format-specific compression functions are now handled by common functions
+# in functions/common/format_operations.fish
 
 # ============================================================================
 # Archive Splitting
 # ============================================================================
 
-function split_archive --description 'Split archive into smaller parts'
-    set -l archive $argv[1]
-    set -l size $argv[2]
-    
-    test -f "$archive"; or return 1
-    
-    if has_command split
-        # Convert size to bytes for split command
-        set -l size_bytes (string replace -r 'M$' '000000' -- $size)
-        set size_bytes (string replace -r 'G$' '000000000' -- $size_bytes)
-        set size_bytes (string replace -r 'K$' '000' -- $size_bytes)
-        
-        split -b $size_bytes "$archive" "$archive.part"
-        
-        # Create a join script
-        echo "#!/bin/sh" > "$archive.join.sh"
-        echo "cat $archive.part* > $archive" >> "$archive.join.sh"
-        chmod +x "$archive.join.sh"
-        
-        return 0
-    else
-        log error "'split' command not found"
-        return 1
-    end
-end
+# Note: Archive splitting function is now handled by common functions
+# in functions/common/file_operations.fish

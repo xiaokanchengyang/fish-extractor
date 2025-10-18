@@ -3,7 +3,7 @@
 # This script installs the Fish Archive Manager plugin
 
 set -l script_dir (dirname (status --current-filename))
-set -l plugin_name "fish-archive"
+set -l plugin_name "fish-extractor"
 set -l version "3.0.0"
 
 function show_help

@@ -1,6 +1,13 @@
 # Archive extraction command for Fish Archive Manager (fish 4.12+)
 # Supports intelligent format detection, multiple archives, progress indication, and comprehensive options
 
+# Load validation helpers
+source (dirname (status --current-filename))/validation.fish
+# Load format handlers
+source (dirname (status --current-filename))/format_handlers.fish
+# Load error handling
+source (dirname (status --current-filename))/error_handling.fish
+
 function extract --description 'Extract archives with smart detection and extensive format support'
     set -l usage "\
 extract - Intelligently extract archives with automatic format detection
@@ -197,34 +204,38 @@ Examples:
         
         set extract_dir (sanitize_path $extract_dir)
 
-        # Handle different operation modes
-        if test $list_only -eq 1
-            list_archive "$archive_path" $format
-            set -l status_code $status
-            if test $status_code -eq 0
-                set success_count (math $success_count + 1)
-            else
-                set fail_count (math $fail_count + 1)
-            end
-            continue
-        else if test $test_only -eq 1
-            test_archive "$archive_path" $format
-            set -l status_code $status
-            if test $status_code -eq 0
-                set success_count (math $success_count + 1)
-                test $quiet -eq 0; and colorize green "✓ $archive: OK\n"
-            else
-                set fail_count (math $fail_count + 1)
-                colorize red "✗ $archive: FAILED\n"
-            end
-            continue
-        else if test $verify -eq 1
-            if not verify_archive "$archive_path" $format
-                log warn "Verification failed for $archive"
-                set fail_count (math $fail_count + 1)
-                continue
-            end
+    # Handle different operation modes
+    if test $list_only -eq 1
+        list_archive "$archive_path" $format
+        set -l status_code $status
+        if test $status_code -eq 0
+            set success_count (math $success_count + 1)
+        else
+            set fail_count (math $fail_count + 1)
         end
+        continue
+    end
+    
+    if test $test_only -eq 1
+        test_archive "$archive_path" $format
+        set -l status_code $status
+        if test $status_code -eq 0
+            set success_count (math $success_count + 1)
+            test $quiet -eq 0; and colorize green "✓ $archive: OK\n"
+        else
+            set fail_count (math $fail_count + 1)
+            colorize red "✗ $archive: FAILED\n"
+        end
+        continue
+    end
+    
+    if test $verify -eq 1
+        if not verify_archive "$archive_path" $format
+            log warn "Verification failed for $archive"
+            set fail_count (math $fail_count + 1)
+            continue
+        end
+    end
 
         # Dry run mode
         if test $dry_run -eq 1
@@ -325,73 +336,43 @@ function extract_archive --description 'Internal: perform actual extraction'
     set -l flat $argv[9]
 
     # Build extraction command based on format
-    switch $format
-        case tar.gz tgz
-            extract_tar "$archive" "$dest" gz $strip $threads $progress $verbose
-            
-        case tar.bz2 tbz2 tbz
-            extract_tar "$archive" "$dest" bz2 $strip $threads $progress $verbose
-            
-        case tar.xz txz
-            extract_tar "$archive" "$dest" xz $strip $threads $progress $verbose
-            
-        case tar.zst tzst
-            extract_tar "$archive" "$dest" zst $strip $threads $progress $verbose
-            
-        case tar.lz4 tlz4
-            extract_tar "$archive" "$dest" lz4 $strip $threads $progress $verbose
-            
-        case tar.lz tlz
-            extract_tar "$archive" "$dest" lz $strip $threads $progress $verbose
-            
-        case tar.lzo tzo
-            extract_tar "$archive" "$dest" lzo $strip $threads $progress $verbose
-            
-        case tar.br tbr
-            extract_tar "$archive" "$dest" br $strip $threads $progress $verbose
-            
-        case tar
-            extract_tar "$archive" "$dest" none $strip $threads $progress $verbose
-            
-        case zip
-            extract_zip "$archive" "$dest" "$password" $verbose
-            
-        case 7z
-            extract_7z "$archive" "$dest" "$password" $threads $verbose
-            
-        case rar
-            extract_rar "$archive" "$dest" "$password" $verbose
-            
-        case gzip gz
-            extract_compressed "$archive" "$dest" gunzip $threads
-            
-        case bzip2 bz2
-            extract_compressed "$archive" "$dest" bunzip2 $threads
-            
-        case xz
-            extract_compressed "$archive" "$dest" unxz $threads
-            
-        case zstd zst
-            extract_compressed "$archive" "$dest" unzstd $threads
-            
-        case lz4
-            extract_compressed "$archive" "$dest" unlz4 $threads
-            
-        case lzip lz
-            extract_compressed "$archive" "$dest" lunzip $threads
-            
-        case brotli br
-            extract_compressed "$archive" "$dest" brotli $threads
-            
-        case iso
-            extract_iso "$archive" "$dest" $verbose
-            
-        case deb rpm
-            extract_package "$archive" "$dest" $format $verbose
-            
-        case '*'
-            # Try fallback extractors
-            extract_fallback "$archive" "$dest" $verbose
+    if is_tar_format $format
+        # Extract tar component
+        set -l comp_format (string replace "tar." "" -- $format)
+        if test "$comp_format" = "tar"
+            set comp_format "none"
+        end
+        extract_tar "$archive" "$dest" $comp_format $strip $threads $progress $verbose
+    else
+        switch $format
+            case zip
+                extract_zip "$archive" "$dest" "$password" $verbose
+            case 7z
+                extract_7z "$archive" "$dest" "$password" $threads $verbose
+            case rar
+                extract_rar "$archive" "$dest" "$password" $verbose
+            case gzip gz
+                extract_compressed "$archive" "$dest" gunzip $threads
+            case bzip2 bz2
+                extract_compressed "$archive" "$dest" bunzip2 $threads
+            case xz
+                extract_compressed "$archive" "$dest" unxz $threads
+            case zstd zst
+                extract_compressed "$archive" "$dest" unzstd $threads
+            case lz4
+                extract_compressed "$archive" "$dest" unlz4 $threads
+            case lzip lz
+                extract_compressed "$archive" "$dest" lunzip $threads
+            case brotli br
+                extract_compressed "$archive" "$dest" brotli $threads
+            case iso
+                extract_iso "$archive" "$dest" $verbose
+            case deb rpm
+                extract_package "$archive" "$dest" $format $verbose
+            case '*'
+                # Try fallback extractors
+                extract_fallback "$archive" "$dest" $verbose
+        end
     end
 end
 

@@ -1,6 +1,11 @@
 # Core utilities for Fish Archive Manager (fish 4.12+)
 # Provides shared functions for logging, colors, path handling, format detection, and tool checking
 
+# Load format handlers
+source (dirname (status --current-filename))/format_handlers.fish
+# Load error handling
+source (dirname (status --current-filename))/error_handling.fish
+
 # ============================================================================
 # Color and Output Management
 # ============================================================================

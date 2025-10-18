@@ -1,6 +1,6 @@
-# Fish Extractor - Complete Usage Guide
+# Fish Archive Manager - Complete Usage Guide
 
-This comprehensive guide covers all features and usage patterns for Fish Extractor, a powerful archive management tool for the Fish shell.
+This comprehensive guide covers all features and usage patterns for Fish Archive Manager, a powerful archive management tool for the Fish shell.
 
 ## Table of Contents
 
@@ -30,13 +30,13 @@ ext-doctor
 
 ## Command Overview
 
-Fish Extractor provides three main commands:
+Fish Archive Manager provides three main commands:
 
 | Command | Aliases | Purpose |
 |---------|---------|---------|
-| `extract` | `extractor` | Extract archives with smart format detection |
-| `compress` | `compressor` | Create archives with intelligent compression |
-| `ext-doctor` | - | Diagnose system capabilities and configuration |
+| `extract` | - | Extract archives with smart format detection |
+| `compress` | - | Create archives with intelligent compression |
+| `doctor` | - | Diagnose system capabilities and configuration |
 
 ## Extract Command
 
@@ -50,7 +50,7 @@ extract [OPTIONS] FILE...
 
 ### Automatic Format Detection
 
-Fish Extractor automatically detects archive formats using:
+Fish Archive Manager automatically detects archive formats using:
 1. **File extension analysis** - Recognizes .tar.gz, .zip, .7z, etc.
 2. **MIME type detection** - Uses the `file` command for accurate identification
 3. **Fallback extractors** - Attempts bsdtar or 7z for unknown formats
@@ -204,7 +204,7 @@ compress [OPTIONS] OUTPUT [INPUT...]
 
 ### Smart Format Selection
 
-Fish Extractor can automatically choose the best compression format:
+Fish Archive Manager can automatically choose the best compression format:
 
 ```fish
 # Automatically select optimal format
@@ -447,12 +447,12 @@ compress -F zip -L 6 share.zip ./files
 
 ## Diagnostic Tool
 
-The `ext-doctor` command checks your system's archive handling capabilities.
+The `doctor` command checks your system's archive handling capabilities.
 
 ### Basic Syntax
 
 ```fish
-ext-doctor [OPTIONS]
+doctor [OPTIONS]
 ```
 
 ### Options
@@ -469,20 +469,20 @@ ext-doctor [OPTIONS]
 
 ```fish
 # Basic system check
-ext-doctor
+doctor
 
 # Detailed diagnostic with all information
-ext-doctor -v
+doctor -v
 
 # Get installation recommendations
-ext-doctor --fix
+doctor --fix
 
 # Export report to file
-ext-doctor --export
-# Creates: fish-extractor-diagnostic-YYYYMMDD_HHMMSS.txt
+doctor --export
+# Creates: fish-archive-diagnostic-YYYYMMDD_HHMMSS.txt
 
 # Quiet check (only errors)
-ext-doctor -q
+doctor -q
 ```
 
 ### Understanding the Output
@@ -501,7 +501,7 @@ The diagnostic report includes:
 
 ### How It Works
 
-Fish Extractor uses a multi-stage detection process:
+Fish Archive Manager uses a multi-stage detection process:
 
 #### 1. Extension-Based Detection
 
@@ -560,7 +560,7 @@ compress --smart output.auto ./data
 
 ### Progress Indicators
 
-When `pv` is installed, Fish Extractor shows real-time progress:
+When `pv` is installed, Fish Archive Manager shows real-time progress:
 
 ```fish
 # Automatic progress bars for large files (>10MB)
@@ -633,7 +633,7 @@ extract archive1.tar.gz archive2.zip archive3.7z
 
 ### Environment Variables
 
-Configure Fish Extractor in your `~/.config/fish/config.fish`:
+Configure Fish Archive Manager in your `~/.config/fish/config.fish`:
 
 ```fish
 # Color output: auto (default), always, never
@@ -873,8 +873,8 @@ ext-doctor -v
 # Export diagnostic report
 ext-doctor --export
 
-# Check Fish Extractor version
-cat ~/.config/fish/fish-extractor/VERSION
+# Check Fish Archive Manager version
+cat ~/.config/fish/fish-archive/VERSION
 ```
 
 ## Exit Codes

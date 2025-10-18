@@ -1,6 +1,13 @@
 # Archive compression command for Fish Archive Manager (fish 4.12+)
 # Supports smart format selection, multiple compression algorithms, and comprehensive options
 
+# Load validation helpers
+source (dirname (status --current-filename))/validation.fish
+# Load format handlers
+source (dirname (status --current-filename))/format_handlers.fish
+# Load error handling
+source (dirname (status --current-filename))/error_handling.fish
+
 function compress --description 'Create archives with intelligent format selection and options'
     set -l usage "\
 compress - Create archives with smart format selection and optimization
@@ -154,25 +161,10 @@ Examples:
         set inputs .
     end
     
-    # Add timestamp if requested
-    if test $add_timestamp -eq 1
-        set -l base_name (string replace -r '\\.[^.]+$' '' -- (basename $output))
-        set -l extension (string match -r '\\.[^.]+$' -- (basename $output))
-        set -l dir_name (dirname $output)
-        set output "$dir_name/$base_name-"(date +%Y%m%d_%H%M%S)"$extension"
-    end
-    
-    # Auto-rename if output exists
-    if test $auto_rename -eq 1; and test -e "$output"
-        set -l counter 1
-        set -l base_output $output
-        set -l base_name (string replace -r '\\.[^.]+$' '' -- $output)
-        set -l extension (string match -r '\\.[^.]+$' -- $output)
-        while test -e "$output"
-            set output "$base_name-$counter$extension"
-            set counter (math $counter + 1)
-        end
-        test $quiet -eq 0; and log info "Auto-renamed to: $output"
+    # Prepare output path with timestamp and auto-rename
+    set output (validate_output_path "$output" $auto_rename $add_timestamp)
+    if test $auto_rename -eq 1; and test $quiet -eq 0
+        log info "Auto-renamed to: $output"
     end
 
     # Validate chdir if specified
@@ -199,26 +191,7 @@ Examples:
     end
 
     # Normalize format aliases
-    switch $format
-        case tgz
-            set format tar.gz
-        case tbz tbz2
-            set format tar.bz2
-        case txz
-            set format tar.xz
-        case tzst
-            set format tar.zst
-        case tlz4
-            set format tar.lz4
-        case tlz
-            set format tar.lz
-        case tzo
-            set format tar.lzo
-        case tbr
-            set format tar.br
-        case '7zip'
-            set format 7z
-    end
+    set format (normalize_format $format)
 
     # Resolve thread count
     set -l thread_count (resolve_threads $threads)
@@ -389,43 +362,23 @@ function create_archive --description 'Internal: perform actual compression'
     set -l solid $argv[-2]
 
     # Dispatch to format-specific handler
-    switch $format
-        case tar
-            create_tar "$output" $files none $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.gz
-            create_tar "$output" $files gzip $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.bz2
-            create_tar "$output" $files bzip2 $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.xz
-            create_tar "$output" $files xz $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.zst
-            create_tar "$output" $files zstd $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.lz4
-            create_tar "$output" $files lz4 $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.lz
-            create_tar "$output" $files lzip $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.lzo
-            create_tar "$output" $files lzop $level $threads $verbose $progress "$chdir" $update
-            
-        case tar.br
-            create_tar "$output" $files brotli $level $threads $verbose $progress "$chdir" $update
-            
-        case zip
-            create_zip "$output" $files $level $encrypt "$password" $verbose $update "$chdir"
-            
-        case 7z
-            create_7z "$output" $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
-            
-        case '*'
-            log error "Unsupported format: $format"
-            return 2
+    if is_tar_format $format
+        # Extract compression component
+        set -l comp_format (string replace "tar." "" -- $format)
+        if test "$comp_format" = "tar"
+            set comp_format "none"
+        end
+        create_tar "$output" $files $comp_format $level $threads $verbose $progress "$chdir" $update
+    else
+        switch $format
+            case zip
+                create_zip "$output" $files $level $encrypt "$password" $verbose $update "$chdir"
+            case 7z
+                create_7z "$output" $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
+            case '*'
+                log error "Unsupported format: $format"
+                return 2
+        end
     end
 end
 

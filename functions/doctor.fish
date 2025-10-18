@@ -1,6 +1,13 @@
 # Archive environment diagnostic tool for Fish Archive Manager (fish 4.12+)
 # Checks system capabilities, available tools, and configuration
 
+# Load validation helpers
+source (dirname (status --current-filename))/validation.fish
+# Load format handlers
+source (dirname (status --current-filename))/format_handlers.fish
+# Load error handling
+source (dirname (status --current-filename))/error_handling.fish
+
 function doctor --description 'Diagnose archive tool environment and capabilities'
     set -l usage "\
 doctor - Diagnostic tool for Fish Archive Manager
@@ -88,9 +95,9 @@ Description:
     for cmd in $required
         if has_command $cmd
             set required_ok (math $required_ok + 1)
-            if test $quiet -eq 0
+            if should_show_info $quiet
                 set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
-                if test $verbose -eq 1; and test -n "$version"
+                if should_show_verbose $verbose $quiet; and test -n "$version"
                     colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
                     set -a report_lines "✓ $cmd: $version"
                 else
@@ -100,7 +107,7 @@ Description:
             end
         else
             set -a missing_required $cmd
-            if test $quiet -eq 0
+            if should_show_info $quiet
                 colorize red (printf "  ✗ %-15s MISSING\n" $cmd)
             end
             set -a report_lines "✗ $cmd: MISSING"

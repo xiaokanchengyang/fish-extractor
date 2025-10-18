@@ -2,7 +2,7 @@
 
 [![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/your-username/fish-extractor)
+[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-extractor)
 
 **Fish Extractor** 是为 [fish shell](https://fishshell.com/) 打造的专业级档案管理工具。它提供强大、直观的命令来解压和压缩档案，支持智能格式检测、并行处理以及全面的选项配置。
 
@@ -73,13 +73,13 @@ brew install unrar pv lzip lzop brotli pigz pbzip2  # macOS
 ### 使用 [Fisher](https://github.com/jorgebucaran/fisher) (推荐)
 
 ```fish
-fisher install your-username/fish-extractor
+fisher install xiaokanchengyang/fish-extractor
 ```
 
 ### 手动安装
 
 ```fish
-git clone https://github.com/your-username/fish-extractor ~/.config/fish/fish-extractor
+git clone https://github.com/xiaokanchengyang/fish-extractor ~/.config/fish/fish-extractor
 ln -sf ~/.config/fish/fish-extractor/functions/*.fish ~/.config/fish/functions/
 ln -sf ~/.config/fish/fish-extractor/completions/*.fish ~/.config/fish/completions/
 ln -sf ~/.config/fish/fish-extractor/conf.d/*.fish ~/.config/fish/conf.d/

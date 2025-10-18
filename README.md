@@ -26,9 +26,11 @@ doctor
 
 ## Documentation
 
-- **[Project Overview](PROJECT.md)** - Features, requirements, installation, and configuration
-- **[Complete Usage Guide](USAGE.md)** - Detailed usage examples and advanced features
-- **[Installation Guide](INSTALL.md)** - Step-by-step installation instructions
+- **[📚 Complete Documentation](docs/)** - All documentation in organized structure
+- **[Complete Usage Guide](docs/USAGE.md)** - Detailed usage examples and advanced features
+- **[Installation Guide](docs/INSTALL.md)** - Step-by-step installation instructions
+- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Code organization and development guide
+- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
 
 ## Key Features
 
@@ -75,7 +77,7 @@ doctor --fix                           # Get installation suggestions
 - **file** (MIME type detection)
 - **tar**, **gzip** (basic functionality)
 
-See [PROJECT.md](PROJECT.md) for complete requirements and installation instructions.
+See [docs/INSTALL.md](docs/INSTALL.md) for complete requirements and installation instructions.
 
 ## Configuration
 

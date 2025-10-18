@@ -373,6 +373,7 @@ function __fish_archive_show_operation_summary --description 'Show operation sum
     set -l input_count $argv[3]
     set -l output_size $argv[4]
     set -l duration $argv[5]
+    set -l cpu_pct $argv[6]
     
     set -l operation_name (string capitalize $operation)
     set -l format_display (string upper $format)
@@ -388,6 +389,14 @@ function __fish_archive_show_operation_summary --description 'Show operation sum
     
     if test $duration -gt 0
         __fish_archive_log info "Duration: ${duration}s"
+        if test $output_size -gt 0
+            set -l throughput (math -s2 "$output_size / $duration / 1048576")
+            __fish_archive_log info "Throughput: ${throughput}MB/s"
+        end
+    end
+
+    if test -n "$cpu_pct"
+        __fish_archive_log info "Estimated CPU utilization: ${cpu_pct}%"
     end
 end
 

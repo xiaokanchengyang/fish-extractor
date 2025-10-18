@@ -61,50 +61,78 @@ end
 # Smart Format Selection
 # ============================================================================
 
-function select_smart_format --description 'Select optimal format based on content analysis'
+function select_smart_format --description 'Select optimal format based on content analysis and system'
     set -l inputs $argv
-    
+
     # Analyze content
     set -l analysis (analyze_archive_content $inputs)
     set -l total_files $analysis[1]
     set -l text_files $analysis[2]
     set -l total_size $analysis[3]
     set -l compressible_size $analysis[4]
-    
+
     # Decision logic based on analysis
     if test $total_files -eq 0
         echo tar.zst  # Default
         return
     end
-    
-    # Calculate text ratio
+
+    # Calculate ratios
     set -l text_ratio 0
     if test $total_files -gt 0
         set text_ratio (math -s0 "$text_files * 100 / $total_files")
     end
-    
-    # Calculate compressible size ratio
+
     set -l compress_ratio 0
     if test $total_size -gt 0
         set compress_ratio (math -s0 "$compressible_size * 100 / $total_size")
     end
-    
-    log debug "Content analysis: $total_files files, $text_ratio% text files, $compress_ratio% compressible by size"
-    
-    # Selection heuristics
-    if test $text_ratio -ge 70; or test $compress_ratio -ge 70
-        # High text content: use xz for maximum compression
-        log info "Detected high text content, choosing tar.xz for maximum compression"
-        echo tar.xz
-    else if test $text_ratio -ge 30; or test $compress_ratio -ge 40
-        # Mixed content: use gzip for compatibility and decent compression
-        log info "Detected mixed content, choosing tar.gz for balance"
-        echo tar.gz
-    else
-        # Binary/multimedia heavy: use zstd for speed and good compression
-        log info "Detected binary content, choosing tar.zst for speed"
-        echo tar.zst
+
+    # System characteristics
+    set -l cores (resolve_threads "")
+    set -l has_pigz (has_command pigz; and echo 1; or echo 0)
+
+    log debug "Content analysis: $total_files files, $text_ratio% text, $compress_ratio% compressible, size=$total_size bytes, cores=$cores"
+
+    # Size thresholds (bytes)
+    set -l HUGE 1073741824     # 1 GiB
+    set -l BIG  268435456      # 256 MiB
+
+    # Heuristics:
+    # - Very large data prefers gzip (pigz if available) for wide availability
+    # - Text-heavy prefers xz for best ratio
+    # - Otherwise prefer zstd for speed/ratio balance
+    if test $total_size -ge $HUGE
+        if test $has_pigz -eq 1
+            log info "Large dataset detected, choosing tar.gz (pigz) for parallel speed"
+            echo tar.gz
+        else
+            log info "Large dataset detected, choosing tar.gz for compatibility"
+            echo tar.gz
+        end
+        return
     end
+
+    if test $text_ratio -ge 70; or test $compress_ratio -ge 70
+        log info "High text content detected, choosing tar.xz for maximum compression"
+        echo tar.xz
+        return
+    end
+
+    if test $total_size -ge $BIG
+        if test $has_pigz -eq 1
+            log info "Big dataset with mixed content, choosing tar.gz (pigz)"
+            echo tar.gz
+        else
+            log info "Big dataset with mixed content, choosing tar.gz"
+            echo tar.gz
+        end
+        return
+    end
+
+    # Default: small/medium or binary-heavy → zstd
+    log info "Choosing tar.zst for fast compression on small/medium or binary-heavy content"
+    echo tar.zst
 end
 
 function normalize_output_format --description 'Normalize output format and update filename if needed'
@@ -247,7 +275,8 @@ function execute_format_command --description 'Execute command for specific form
             case rar
                 execute_rar_operation $operation $args
             case gzip gz bzip2 bz2 xz zstd zst lz4 lz lzip lzo brotli br
-                execute_compressed_file_operation $operation $args
+                # Pass format explicitly for single-file operations
+                execute_compressed_file_operation $operation $format $args
             case iso deb rpm
                 execute_package_operation $operation $args
             case '*'

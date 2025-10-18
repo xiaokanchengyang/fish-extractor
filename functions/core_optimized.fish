@@ -189,7 +189,7 @@ function __fish_archive_show_progress_bar --description 'Show progress bar with 
     
     if __fish_archive_can_show_progress
         # Enhanced pv with better formatting
-        pv -p -t -e -r -a -b -s $size --format 'ETA: %E, Rate: %R, Progress: %p%'
+        pv -p -t -e -r -a -b -s $size --format 'ETA: %E | Rate: %R | Avg: %a | %p%'
     else
         # Passthrough without progress
         cat
@@ -520,15 +520,42 @@ function __fish_archive_smart_format --description 'Choose optimal compression f
     set -l analysis (__fish_archive_analyze_content $inputs)
     set -l text_ratio (echo $analysis | cut -d' ' -f1)
     set -l size_ratio (echo $analysis | cut -d' ' -f2)
+    set -l total_info (__fish_archive_analyze_content $inputs)
+    set -l total_files (echo $total_info | awk '{print $3}')
+    set -l total_size (echo $total_info | awk '{print $4}')
+    set -l has_pigz (__fish_archive_has_command pigz; and echo 1; or echo 0)
     
-    # Choose format based on content analysis
+    # Size thresholds
+    set -l HUGE 1073741824     # 1 GiB
+    set -l BIG  268435456      # 256 MiB
+
+    # Very large datasets → gzip (pigz if available) for broad compatibility
+    if test -n "$total_size"; and test $total_size -ge $HUGE
+        if test $has_pigz -eq 1
+            echo "tar.gz"
+            return
+        end
+        echo "tar.gz"
+        return
+    end
+
+    # Content-based selection
     if test (math "$text_ratio >= 70") -eq 1
         echo "tar.xz"  # Maximum compression for text
-    else if test (math "$text_ratio >= 30") -eq 1
-        echo "tar.gz"  # Balanced compression
-    else
-        echo "tar.zst"  # Fast compression for binary
+        return
     end
+
+    if test -n "$total_size"; and test $total_size -ge $BIG
+        echo "tar.gz"  # Mixed big datasets → gzip/pigz
+        return
+    end
+
+    if test (math "$text_ratio >= 30") -eq 1
+        echo "tar.gz"  # Balanced compression
+        return
+    end
+
+    echo "tar.zst"  # Fast compression for binary/small-medium
 end
 
 # ============================================================================

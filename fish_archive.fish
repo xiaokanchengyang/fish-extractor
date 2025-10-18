@@ -10,6 +10,7 @@ set -l plugin_description "Professional archive management tool for fish shell w
 set -l functions_dir (status dirname)/functions
 set -l completions_dir (status dirname)/completions
 set -l conf_dir (status dirname)/conf.d
+set -l tools_dir (status dirname)/tools
 
 # Export installation paths for Fisher
 if test -d $functions_dir
@@ -26,6 +27,13 @@ end
 
 if test -d $conf_dir
     for file in $conf_dir/*.fish
+        echo $file
+    end
+end
+
+# Include tools (utilities) in plugin
+if test -d $tools_dir
+    for file in $tools_dir/*.fish
         echo $file
     end
 end

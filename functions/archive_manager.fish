@@ -282,14 +282,34 @@ Examples:
                 set progress_enabled 1
             end
             
-            # Execute with progress
+            # Execute with progress and measure
+            set -l start_ts (date +%s)
+            set -l cpu_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
+            set -l idle_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
+
             if test $progress_enabled -eq 1
                 eval (string join ' ' $extract_args) | __fish_archive_show_progress_bar $file_size
             else
                 eval (string join ' ' $extract_args)
             end
-            
-            if test $status -eq 0
+
+            set -l cmd_status $status
+            set -l end_ts (date +%s)
+            set -l cpu_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
+            set -l idle_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
+            set -l duration (math "$end_ts - $start_ts")
+
+            set -l cpu_pct ""
+            if test -n "$cpu_start"; and test -n "$cpu_end"
+                set -l cpu_delta (math "$cpu_end - $cpu_start")
+                set -l idle_delta (math "$idle_end - $idle_start")
+                if test $cpu_delta -gt 0
+                    set -l busy (math "$cpu_delta - $idle_delta")
+                    set cpu_pct (math -s1 "$busy * 100 / $cpu_delta")
+                end
+            end
+
+            if test $cmd_status -eq 0
                 __fish_archive_log info "Successfully extracted: $archive"
                 set success_count (math "$success_count + 1")
                 
@@ -297,6 +317,7 @@ Examples:
                 if test $checksum -eq 1
                     __fish_archive_generate_checksum "$dest"
                 end
+                __fish_archive_show_operation_summary "extract" "$format" 1 $file_size $duration "$cpu_pct"
             else
                 __fish_archive_log error "Failed to extract: $archive"
             end
@@ -521,6 +542,7 @@ Examples:
     
     # Determine format
     if test "$format" = "auto"; or test $smart -eq 1
+        # Prefer zstd for small, pigz(gzip) for huge unless user specifies
         set format (__fish_archive_smart_format $input_files)
         __fish_archive_log info "Selected format: $format"
     else
@@ -588,14 +610,34 @@ Examples:
     
     __fish_archive_log info "Compressing to: $output"
     
-    # Execute with progress
+    # Execute with progress and measure duration/CPU usage
+    set -l start_ts (date +%s)
+    set -l cpu_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
+    set -l idle_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
+
     if test $enable_progress -eq 1; and test $total_size -gt 10485760
         eval (string join ' ' $compress_args) | __fish_archive_show_progress_bar $total_size
     else
         eval (string join ' ' $compress_args)
     end
-    
-    if test $status -eq 0
+    set -l cmd_status $status
+
+    set -l end_ts (date +%s)
+    set -l cpu_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
+    set -l idle_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
+    set -l duration (math "$end_ts - $start_ts")
+
+    set -l cpu_pct ""
+    if test -n "$cpu_start"; and test -n "$cpu_end"
+        set -l cpu_delta (math "$cpu_end - $cpu_start")
+        set -l idle_delta (math "$idle_end - $idle_start")
+        if test $cpu_delta -gt 0
+            set -l busy (math "$cpu_delta - $idle_delta")
+            set cpu_pct (math -s1 "$busy * 100 / $cpu_delta")
+        end
+    end
+
+    if test $cmd_status -eq 0
         __fish_archive_log info "Successfully compressed to: $output"
         
         # Generate checksum if requested
@@ -603,9 +645,10 @@ Examples:
             __fish_archive_generate_checksum "$output"
         end
         
-        # Show compression stats
+        # Show compression stats and summary
         set -l compressed_size (__fish_archive_get_file_size "$output")
         __fish_archive_show_compression_stats $total_size $compressed_size "$format"
+        __fish_archive_show_operation_summary "compress" "$format" (count $valid_files) $compressed_size $duration "$cpu_pct"
         
         return 0
     else

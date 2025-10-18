@@ -71,6 +71,12 @@ complete -c doctor -n "not __fish_seen_subcommand_from --help" -s q -l quiet -d 
 complete -c doctor -n "not __fish_seen_subcommand_from --help" -l fix -d "Suggest fixes for missing tools"
 complete -c doctor -n "not __fish_seen_subcommand_from --help" -l export -d "Export diagnostic report"
 
+# Archqueue completions
+complete -c archqueue -n "not __fish_seen_subcommand_from --help" -l parallel -r -d "Run N tasks in parallel"
+complete -c archqueue -n "not __fish_seen_subcommand_from --help" -l sequential -d "Run tasks sequentially"
+complete -c archqueue -n "not __fish_seen_subcommand_from --help" -l stop-on-error -d "Stop on first failure"
+complete -c archqueue -n "__fish_use_subcommand" -a "compress:: extract::" -d "Task kinds"
+
 # ============================================================================
 # Backward Compatibility Completions
 # ============================================================================

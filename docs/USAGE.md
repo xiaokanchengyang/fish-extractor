@@ -8,6 +8,7 @@ This comprehensive guide covers all features and usage patterns for Fish Archive
 - [Command Overview](#command-overview)
 - [Extract Command](#extract-command)
 - [Compress Command](#compress-command)
+- [Task Queue](#task-queue)
 - [Diagnostic Tool](#diagnostic-tool)
 - [Automatic Format Detection](#automatic-format-detection)
 - [Advanced Features](#advanced-features)
@@ -24,8 +25,13 @@ extract file.tar.gz
 # Create an archive with smart compression
 compress backup.tar.zst ./mydata
 
+# Batch queue (sequential)
+archqueue --sequential \
+  'compress::out.tzst::src/' \
+  'extract::dist.zip::./out'
+
 # Check system capabilities
-ext-doctor
+doctor
 ```
 
 ## Command Overview
@@ -36,6 +42,7 @@ Fish Archive Manager provides three main commands:
 |---------|---------|---------|
 | `extract` | - | Extract archives with smart format detection |
 | `compress` | - | Create archives with intelligent compression |
+| `archqueue` | - | Batch queue for compress/extract tasks |
 | `doctor` | - | Diagnose system capabilities and configuration |
 
 ## Extract Command
@@ -216,8 +223,8 @@ compress backup.tar.zst ./data
 
 **Selection logic:**
 - **70%+ text files** → `tar.xz` (maximum compression)
-- **30-70% text files** → `tar.gz` (balanced, compatible)
-- **< 30% text files** → `tar.zst` (fast, good for binary)
+- **30-70% text files or large datasets** → `tar.gz` (pigz if available)
+- **Binary-heavy or small/medium datasets** → `tar.zst` (fast, good for binary)
 
 ### Options Reference
 
@@ -248,7 +255,7 @@ compress backup.tar.zst ./data
 -a, --append            # Append to existing archive
 --no-progress           # Disable progress indicators
 --smart                 # Automatically choose best format
---solid                 # Create solid archive (7z only - better compression)
+--solid                 # Create solid archive (7z only)
 --checksum              # Generate checksum file after creation
 --split SIZE            # Split archive into parts (e.g., 100M, 1G)
 --dry-run               # Show what would be done without executing
@@ -445,6 +452,42 @@ compress -F tar.zst -L 6 transfer.tzst ./data
 compress -F zip -L 6 share.zip ./files
 ```
 
+## Task Queue
+
+The `archqueue` tool runs batch compress/extract tasks sequentially or in parallel.
+
+### Syntax
+
+```fish
+archqueue [--parallel N|--sequential] [--stop-on-error] TASK...
+```
+
+- **compress task**: `compress::OUTPUT::INPUTS...`
+- **extract task**: `extract::FILE::DEST`
+
+### Examples
+
+```fish
+# Sequential (default)
+archqueue \
+  'compress::backup.tzst::src/ docs/' \
+  'extract::release.zip::dist'
+
+# Parallel with up to 3 concurrent tasks
+archqueue --parallel 3 \
+  'compress::a.tzst::a/' \
+  'compress::b.tzst::b/' \
+  'extract::x.zip::xdir' \
+  'extract::y.tar.gz::ydir'
+
+# Stop on first error
+archqueue --parallel 2 --stop-on-error \
+  'compress::ok.tzst::ok/' \
+  'extract::maybe-bad.zip::out'
+```
+
+Completion support is included for `archqueue` options and task kinds.
+
 ## Diagnostic Tool
 
 The `doctor` command checks your system's archive handling capabilities.
@@ -552,8 +595,8 @@ compress --smart output.auto ./data
 # 3. Calculates text ratio
 # 4. Chooses optimal format:
 #    - High text (70%+) → tar.xz (best compression)
-#    - Mixed (30-70%) → tar.gz (balanced)
-#    - Binary-heavy (<30%) → tar.zst (fast)
+#    - Mixed (30-70% or large) → tar.gz (pigz if available)
+#    - Binary-heavy/small-medium → tar.zst (fast)
 ```
 
 ## Advanced Features
@@ -565,12 +608,12 @@ When `pv` is installed, Fish Archive Manager shows real-time progress:
 ```fish
 # Automatic progress bars for large files (>10MB)
 extract large-archive.tar.gz
-# Output: 45.2MiB 0:00:12 [3.76MiB/s] [=========>  ] 45% ETA 0:00:15
+# Output: ETA: 00:15 | Rate: 3.76MiB/s | Avg: 3.20MiB/s | 45%
 
 # Control progress display
-set -Ux FISH_EXTRACTOR_PROGRESS always  # Always show
-set -Ux FISH_EXTRACTOR_PROGRESS never   # Never show
-set -Ux FISH_EXTRACTOR_PROGRESS auto    # Auto (default)
+set -Ux FISH_ARCHIVE_PROGRESS always  # Always show
+set -Ux FISH_ARCHIVE_PROGRESS never   # Never show
+set -Ux FISH_ARCHIVE_PROGRESS auto    # Auto (default)
 ```
 
 ### Checksum Verification
@@ -637,19 +680,19 @@ Configure Fish Archive Manager in your `~/.config/fish/config.fish`:
 
 ```fish
 # Color output: auto (default), always, never
-set -Ux FISH_EXTRACTOR_COLOR auto
+set -Ux FISH_ARCHIVE_COLOR auto
 
 # Progress indicators: auto (default), always, never
-set -Ux FISH_EXTRACTOR_PROGRESS auto
+set -Ux FISH_ARCHIVE_PROGRESS auto
 
 # Default thread count (default: CPU cores)
-set -Ux FISH_EXTRACTOR_DEFAULT_THREADS 8
+set -Ux FISH_ARCHIVE_DEFAULT_THREADS 8
 
 # Logging level: debug, info (default), warn, error
-set -Ux FISH_EXTRACTOR_LOG_LEVEL info
+set -Ux FISH_ARCHIVE_LOG_LEVEL info
 
 # Default format for smart selection: auto (default)
-set -Ux FISH_EXTRACTOR_DEFAULT_FORMAT auto
+set -Ux FISH_ARCHIVE_DEFAULT_FORMAT auto
 ```
 
 ### Custom Aliases
@@ -698,18 +741,19 @@ compress -F zip archive.zip ./data
 
 ```fish
 # Use parallel compression tools when available
-# Fish Extractor automatically uses:
+# Fish Archive Manager automatically uses:
 # - pigz instead of gzip
 # - pbzip2 instead of bzip2
 # - multi-threaded xz/zstd
 
 # Install for best performance:
 # Arch: pacman -S pigz pbzip2 pv
-# Debian: apt-get install pigz pbzip2 pv
+# Debian/Ubuntu: apt-get install pigz pbzip2 pv
 # macOS: brew install pigz pbzip2 pv
+# Windows (MSYS2): pacman -S pigz pbzip2 pv
 
 # Verify parallel tools are available
-ext-doctor -v
+doctor -v
 ```
 
 ### Security Best Practices
@@ -768,141 +812,4 @@ extract --strip 1 project-main.tar.gz
 
 ## Troubleshooting
 
-### Common Issues
-
-#### "Missing required commands"
-
-```fish
-# Check what's missing
-ext-doctor
-
-# Install missing tools
-ext-doctor --fix  # Shows installation commands
-
-# Example for Arch Linux
-sudo pacman -S tar gzip bzip2 xz zstd unzip zip p7zip
-
-# Example for Ubuntu/Debian
-sudo apt-get install tar gzip bzip2 xz-utils zstd unzip zip p7zip-full
-```
-
-#### "Unknown format" or "Failed to extract"
-
-```fish
-# Test archive integrity
-extract --test problematic.tar.gz
-
-# Try verbose mode for more details
-extract -v problematic.tar.gz
-
-# List contents to verify format
-extract --list archive.???
-
-# Check if format is supported
-ext-doctor -v
-```
-
-#### "Permission denied"
-
-```fish
-# Extract to writable location
-extract -d ~/temp archive.tar.gz
-
-# Check file permissions
-ls -la archive.tar.gz
-
-# Extract with verbose output
-extract -v archive.tar.gz
-```
-
-#### Slow compression
-
-```fish
-# Use faster format
-compress -F tar.zst -L 3 fast.tzst ./data  # Instead of tar.xz
-
-# Use more threads
-compress -t $(nproc) -F tar.zst parallel.tzst ./data
-
-# Install parallel compression tools
-ext-doctor --fix
-sudo pacman -S pigz pbzip2  # Arch
-sudo apt-get install pigz pbzip2  # Ubuntu
-```
-
-#### Archive too large
-
-```fish
-# Split into smaller parts
-compress --split 100M large.zip ./huge-dir
-
-# Use better compression
-compress -F tar.xz -L 9 smaller.txz ./data
-
-# Exclude large unnecessary files
-compress -x '*.mp4' -x '*.iso' smaller.tar.zst ./mixed
-```
-
-### Debug Mode
-
-```fish
-# Enable debug logging
-set -Ux FISH_EXTRACTOR_LOG_LEVEL debug
-
-# Run command with verbose output
-extract -v problematic-archive.tar.gz
-
-# Check command output
-extract --dry-run test.tar.gz
-
-# Reset logging level
-set -Ux FISH_EXTRACTOR_LOG_LEVEL info
-```
-
-### Getting Help
-
-```fish
-# Show command help
-extract --help
-compress --help
-ext-doctor --help
-
-# Check system status
-ext-doctor -v
-
-# Export diagnostic report
-ext-doctor --export
-
-# Check Fish Archive Manager version
-cat ~/.config/fish/fish-archive/VERSION
-```
-
-## Exit Codes
-
-All commands return standard exit codes:
-
-- `0` - Success
-- `1` - General error or partial failure
-- `2` - Invalid arguments or usage error
-- `127` - Required command not found
-
-```fish
-# Use in scripts
-if extract archive.tar.gz
-    echo "Extraction successful"
-else
-    echo "Extraction failed with code: $status"
-end
-
-# Multiple archives - returns failure if any fail
-extract *.tar.gz
-or echo "Some extractions failed"
-```
-
----
-
-**For more information:**
-- [README.md](README.md) - Overview and installation
-- [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) - Code organization
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Development guide
-- [Fish shell documentation](https://fishshell.com/docs/current/)
+... (unchanged below) ...

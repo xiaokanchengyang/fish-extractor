@@ -3,9 +3,10 @@
 
 function __fish_extractor_extract --description 'Extract archives with smart detection and extensive format support'
     set -l usage "\
-extractor - Intelligently extract archives
+extract / extractor - Intelligently extract archives with automatic format detection
 
-Usage: extractor [OPTIONS] FILE...
+Usage: extract [OPTIONS] FILE...
+   or: extractor [OPTIONS] FILE...
 
 Options:
   -d, --dest DIR          Destination directory (default: derived from archive name)
@@ -36,14 +37,14 @@ Supported Formats:
   - And more via automatic fallback to bsdtar/7z
 
 Examples:
-  extractor file.tar.gz                    # Extract to ./file/
-  extractor -d output/ archive.zip         # Extract to ./output/
-  extractor --strip 1 dist.tar.xz          # Strip top-level directory
-  extractor -p secret encrypted.7z         # Extract encrypted archive
-  extractor --list archive.zip             # List contents only
-  extractor --test backup.tar.gz           # Test integrity
-  extractor *.tar.gz                       # Extract multiple archives
-  extractor --verify --checksum data.txz   # Verify and generate checksum
+  extract file.tar.gz                      # Extract to ./file/
+  extract -d output/ archive.zip           # Extract to ./output/
+  extract --strip 1 dist.tar.xz            # Strip top-level directory
+  extract -p secret encrypted.7z           # Extract encrypted archive
+  extract --list archive.zip               # List contents only
+  extract --test backup.tar.gz             # Test integrity
+  extract *.tar.gz                         # Extract multiple archives
+  extract --verify --checksum data.txz     # Verify and generate checksum
 "
 
     # Parse arguments

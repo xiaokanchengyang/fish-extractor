@@ -3,9 +3,10 @@
 
 function __fish_extractor_compress --description 'Create archives with intelligent format selection and options'
     set -l usage "\
-compressor - Create archives intelligently
+compress / compressor - Create archives with smart format selection and optimization
 
-Usage: compressor [OPTIONS] OUTPUT [INPUT...]
+Usage: compress [OPTIONS] OUTPUT [INPUT...]
+   or: compressor [OPTIONS] OUTPUT [INPUT...]
 
 Options:
   -F, --format FMT        Archive format (see formats below)
@@ -43,15 +44,15 @@ Formats:
   auto          Automatically detect best format (default)
 
 Examples:
-  compressor backup.tar.zst ./data           # Fast compression with zstd
-  compressor -F tar.xz logs.tar.xz /var/log  # Maximum compression
-  compressor --smart output.auto ./project   # Auto-select format
-  compressor -L 9 archive.7z files/          # Maximum 7z compression
-  compressor -e -p secret secure.zip docs/   # Encrypted ZIP
-  compressor -x '*.tmp' -x '*.log' out.tgz . # Exclude patterns
-  compressor -u existing.tar.gz newfile.txt  # Update existing archive
-  compressor --checksum backup.txz data/     # Create with checksum
-  compressor --split 100M large.zip huge/    # Split into 100MB parts
+  compress backup.tar.zst ./data             # Fast compression with zstd
+  compress -F tar.xz logs.tar.xz /var/log    # Maximum compression
+  compress --smart output.auto ./project     # Auto-select format
+  compress -L 9 archive.7z files/            # Maximum 7z compression
+  compress -e -p secret secure.zip docs/     # Encrypted ZIP
+  compress -x '*.tmp' -x '*.log' out.tgz .   # Exclude patterns
+  compress -u existing.tar.gz newfile.txt    # Update existing archive
+  compress --checksum backup.txz data/       # Create with checksum
+  compress --split 100M large.zip huge/      # Split into 100MB parts
 "
 
     # Parse arguments

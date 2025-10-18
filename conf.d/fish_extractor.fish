@@ -35,16 +35,28 @@ or set -gx FISH_EXTRACTOR_DEFAULT_FORMAT auto
 # Create Command Aliases
 # ============================================================================
 
-# Main extraction command
-if not functions -q extractor
-    function extractor --wraps=__fish_extractor_extract --description 'Extract archives intelligently'
+# Main extraction command (primary aliases)
+if not functions -q extract
+    function extract --wraps=__fish_extractor_extract --description 'Extract archives intelligently'
         __fish_extractor_extract $argv
     end
 end
 
-# Main compression command
+if not functions -q extractor
+    function extractor --wraps=__fish_extractor_extract --description 'Extract archives intelligently (alias)'
+        __fish_extractor_extract $argv
+    end
+end
+
+# Main compression command (primary aliases)
+if not functions -q compress
+    function compress --wraps=__fish_extractor_compress --description 'Create archives intelligently'
+        __fish_extractor_compress $argv
+    end
+end
+
 if not functions -q compressor
-    function compressor --wraps=__fish_extractor_compress --description 'Create archives intelligently'
+    function compressor --wraps=__fish_extractor_compress --description 'Create archives intelligently (alias)'
         __fish_extractor_compress $argv
     end
 end

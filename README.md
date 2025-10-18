@@ -1,10 +1,10 @@
-# Fish Extractor
+# Fish Archive Manager
 
 [![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/your-username/fish-extractor)
+[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/your-username/fish-archive)
 
-**Fish Extractor** is a professional-grade archive management tool for the [fish shell](https://fishshell.com/). It provides powerful, intuitive commands for extracting and compressing archives with smart format detection, parallel processing, and comprehensive options.
+**Fish Archive Manager** is a professional-grade archive management tool for the [fish shell](https://fishshell.com/). It provides powerful, intuitive commands for extracting and compressing archives with smart format detection, parallel processing, and comprehensive options.
 
 [English](README.md) | [简体中文](README_CN.md)
 
@@ -73,27 +73,27 @@ brew install unrar pv lzip lzop brotli pigz pbzip2  # macOS
 ### Using [Fisher](https://github.com/jorgebucaran/fisher) (Recommended)
 
 ```fish
-fisher install your-username/fish-extractor
+fisher install your-username/fish-archive
 ```
 
 ### Manual Installation
 
 ```fish
-git clone https://github.com/your-username/fish-extractor ~/.config/fish/fish-extractor
-ln -sf ~/.config/fish/fish-extractor/functions/*.fish ~/.config/fish/functions/
-ln -sf ~/.config/fish/fish-extractor/completions/*.fish ~/.config/fish/completions/
-ln -sf ~/.config/fish/fish-extractor/conf.d/*.fish ~/.config/fish/conf.d/
+git clone https://github.com/your-username/fish-archive ~/.config/fish/fish-archive
+ln -sf ~/.config/fish/fish-archive/functions/*.fish ~/.config/fish/functions/
+ln -sf ~/.config/fish/fish-archive/completions/*.fish ~/.config/fish/completions/
+ln -sf ~/.config/fish/fish-archive/conf.d/*.fish ~/.config/fish/conf.d/
 ```
 
 ### Verify Installation
 
 ```fish
-ext-doctor
+doctor
 ```
 
 ## 📖 Usage
 
-### Archive Extraction (`extract` / `extractor`)
+### Archive Extraction (`extract`)
 
 Extract archives with intelligent format detection:
 
@@ -163,7 +163,7 @@ extract -v complicated.7z                # Show detailed progress
     --help              Display help
 ```
 
-### Archive Compression (`compress` / `compressor`)
+### Archive Compression (`compress`)
 
 Create archives with smart format selection:
 
@@ -255,54 +255,54 @@ compress -v -L 7 -F tar.xz archive.txz files/
 | `7z`            | 7-Zip (high compression, encryption)            | Secure backups          |
 | `auto`          | Automatically choose best                       | Smart default           |
 
-### Environment Diagnostics (`ext-doctor`)
+### Environment Diagnostics (`doctor`)
 
 Check your system's archive handling capabilities:
 
 ```fish
 # Basic check
-ext-doctor
+doctor
 
 # Detailed system information
-ext-doctor -v
+doctor -v
 
 # Get installation suggestions
-ext-doctor --fix
+doctor --fix
 
 # Export diagnostic report
-ext-doctor --export
+doctor --export
 
 # Quiet mode (only errors)
-ext-doctor -q
+doctor -q
 ```
 
 ## ⚙️ Configuration
 
-Configure Fish Extractor by setting environment variables (e.g., in `~/.config/fish/config.fish`):
+Configure Fish Archive Manager by setting environment variables (e.g., in `~/.config/fish/config.fish`):
 
 ```fish
 # Color output: auto (default), always, never
-set -Ux FISH_EXTRACTOR_COLOR auto
+set -Ux FISH_ARCHIVE_COLOR auto
 
 # Progress indicators: auto (default), always, never
-set -Ux FISH_EXTRACTOR_PROGRESS auto
+set -Ux FISH_ARCHIVE_PROGRESS auto
 
 # Default thread count (default: CPU cores)
-set -Ux FISH_EXTRACTOR_DEFAULT_THREADS 8
+set -Ux FISH_ARCHIVE_DEFAULT_THREADS 8
 
 # Logging level: debug, info (default), warn, error
-set -Ux FISH_EXTRACTOR_LOG_LEVEL info
+set -Ux FISH_ARCHIVE_LOG_LEVEL info
 
 # Default format for smart selection
-set -Ux FISH_EXTRACTOR_DEFAULT_FORMAT auto
+set -Ux FISH_ARCHIVE_DEFAULT_FORMAT auto
 ```
 
 ## 🎯 Smart Format Selection
 
-Fish Extractor can automatically choose the best compression format based on your data:
+Fish Archive Manager can automatically choose the best compression format based on your data:
 
 ```fish
-compressor --smart output.auto ./mydata
+compress --smart output.auto ./mydata
 ```
 
 **Selection Logic:**
@@ -316,13 +316,13 @@ compressor --smart output.auto ./mydata
 
 ```fish
 # Use zstd for large binary files (fast)
-compressor -F tar.zst -t $(nproc) backup.tzst /large/dataset
+compress -F tar.zst -t $(nproc) backup.tzst /large/dataset
 
 # Use xz for text-heavy content (best compression)
-compressor -F tar.xz -t $(nproc) source.txz /code
+compress -F tar.xz -t $(nproc) source.txz /code
 
 # Use lz4 for temporary archives (very fast)
-compressor -F tar.lz4 temp.tlz4 /tmp/data
+compress -F tar.lz4 temp.tlz4 /tmp/data
 ```
 
 ### Compression Level Guide
@@ -335,52 +335,52 @@ compressor -F tar.lz4 temp.tlz4 /tmp/data
 
 ```fish
 # Create encrypted ZIP
-compressor -e -p "strong-password" secure.zip sensitive/
+compress -e -p "strong-password" secure.zip sensitive/
 
 # Create encrypted 7z with solid compression
-compressor --solid -e -p "strong-password" -F 7z backup.7z data/
+compress --solid -e -p "strong-password" -F 7z backup.7z data/
 ```
 
 ### Working with Large Archives
 
 ```fish
 # Show progress with pv
-extractor large-archive.tar.zst  # Progress bar appears automatically
+extract large-archive.tar.zst  # Progress bar appears automatically
 
 # Use multiple threads
-extractor -t 16 huge-file.tar.xz
+extract -t 16 huge-file.tar.xz
 
 # Test before extracting
-extractor --test archive.7z && extractor archive.7z
+extract --test archive.7z && extract archive.7z
 
 # Split large archive
-compressor --split 100M large.zip huge-files/
+compress --split 100M large.zip huge-files/
 ```
 
 ### Backup Workflows
 
 ```fish
 # Daily backup with date
-compressor -F tar.zst backup-$(date +%Y%m%d).tzst ~/Documents
+compress -F tar.zst backup-$(date +%Y%m%d).tzst ~/Documents
 
 # Incremental backup (update mode)
-compressor -u backup.tar.zst ~/Documents
+compress -u backup.tar.zst ~/Documents
 
 # Exclude cache and temp files
-compressor -x '*.cache' -x '*.tmp' -x '.git/*' clean-backup.tgz ~/project
+compress -x '*.cache' -x '*.tmp' -x '.git/*' clean-backup.tgz ~/project
 ```
 
 ### Development Workflows
 
 ```fish
 # Package source code
-compressor -F tar.xz -x 'node_modules/*' -x '__pycache__/*' release.txz .
+compress -F tar.xz -x 'node_modules/*' -x '__pycache__/*' release.txz .
 
 # Create distributable archive with checksum
-compressor --smart --checksum -x '*.log' -x '.env' dist.auto ./app
+compress --smart --checksum -x '*.log' -x '.env' dist.auto ./app
 
 # Extract and verify
-extractor --verify --test release.txz && extractor release.txz
+extract --verify --test release.txz && extract release.txz
 ```
 
 ## 🔧 Troubleshooting
@@ -388,46 +388,46 @@ extractor --verify --test release.txz && extractor release.txz
 ### Missing Tools
 
 ```fish
-ext-doctor --fix  # Shows installation commands
+doctor --fix  # Shows installation commands
 ```
 
 ### Extraction Fails
 
 ```fish
 # Test integrity first
-extractor --test problematic.tar.gz
+extract --test problematic.tar.gz
 
 # Try verbose mode
-extractor -v problematic.tar.gz
+extract -v problematic.tar.gz
 
 # Check available formats
-ext-doctor -v
+doctor -v
 ```
 
 ### Compression Issues
 
 ```fish
 # Verify inputs exist
-compressor --dry-run output.tar.zst input/
+compress --dry-run output.tar.zst input/
 
 # Check format support
-ext-doctor
+doctor
 ```
 
 ## 🔄 Comparison with Other Tools
 
-| Feature                | Fish Extractor | `tar` + `*` | `atool` | `dtrx` |
-|------------------------|----------------|-------------|---------|--------|
-| Smart format detection | ✓              | -           | ✓       | ✓      |
-| Multi-threading        | ✓              | Manual      | -       | -      |
-| Progress indicators    | ✓              | Manual      | -       | -      |
-| Archive testing        | ✓              | Manual      | -       | -      |
-| Checksum verification  | ✓              | -           | -       | -      |
-| Encryption support     | ✓              | -           | ✓       | -      |
-| Batch processing       | ✓              | -           | -       | -      |
-| Archive splitting      | ✓              | Manual      | -       | -      |
-| Fish completions       | ✓              | Basic       | -       | -      |
-| Modern fish syntax     | ✓              | N/A         | N/A     | N/A    |
+| Feature                | Fish Archive Manager | `tar` + `*` | `atool` | `dtrx` |
+|------------------------|---------------------|-------------|---------|--------|
+| Smart format detection | ✓                   | -           | ✓       | ✓      |
+| Multi-threading        | ✓                   | Manual      | -       | -      |
+| Progress indicators    | ✓                   | Manual      | -       | -      |
+| Archive testing        | ✓                   | Manual      | -       | -      |
+| Checksum verification  | ✓                   | -           | -       | -      |
+| Encryption support     | ✓                   | -           | ✓       | -      |
+| Batch processing       | ✓                   | -           | -       | -      |
+| Archive splitting      | ✓                   | Manual      | -       | -      |
+| Fish completions       | ✓                   | Basic       | -       | -      |
+| Modern fish syntax     | ✓                   | N/A         | N/A     | N/A    |
 
 ## 🤝 Contributing
 
@@ -458,10 +458,10 @@ MIT License - see LICENSE file for details
 
 **Made with ❤️ for fish shell users**
 
-## What's New in v2.0.0
+## What's New in v3.0.0
 
-- 🎉 **Renamed to Fish Extractor** - Clearer, more focused name
-- 🔧 **New Commands**: `extract`/`extractor`, `compress`/`compressor`, `ext-doctor`
+- 🎉 **Complete Rewrite**: Cleaner code, better naming conventions, comprehensive comments
+- 🔧 **New Commands**: `extract`, `compress`, `doctor` with simplified names
 - ✨ **Enhanced Features**:
   - Automatic format detection (extension + MIME type)
   - Checksum verification and generation

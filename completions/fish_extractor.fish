@@ -82,6 +82,10 @@ complete -c extract -l flat -d 'Extract without directory structure'
 complete -c extract -l dry-run -d 'Show what would be done'
 complete -c extract -l backup -d 'Create backup before extraction'
 complete -c extract -l checksum -d 'Generate checksum after extraction'
+complete -c extract -l auto-rename -d 'Automatically rename if destination exists'
+complete -c extract -l timestamp -d 'Add timestamp to extraction directory name'
+complete -c extract -l preserve-perms -d 'Preserve file permissions (default)'
+complete -c extract -l no-preserve-perms -d 'Do not preserve file permissions'
 complete -c extract -s h -l help -d 'Display help message'
 
 # File completions for archives (extract command)
@@ -141,6 +145,9 @@ complete -c compress -l solid -d 'Create solid archive (7z only)'
 complete -c compress -l checksum -d 'Generate checksum file'
 complete -c compress -l split -r -d 'Split archive into parts (e.g., 100M, 1G)'
 complete -c compress -l dry-run -d 'Show what would be done'
+complete -c compress -l timestamp -d 'Add timestamp to archive name'
+complete -c compress -l auto-rename -d 'Automatically rename if output exists'
+complete -c compress -l compare -d 'Compare compression efficiency across formats'
 complete -c compress -s h -l help -d 'Display help message'
 
 # Common glob patterns for include/exclude (compress command)

@@ -435,10 +435,11 @@ MIT License - 详见 LICENSE 文件
 
 ## 📚 更多文档
 
-- [安装指南](INSTALL.md) (English)
-- [贡献指南](CONTRIBUTING.md) (English)
+- [完整使用指南](docs/USAGE.md) (English)
+- [安装指南](docs/INSTALL.md) (English)
+- [项目结构](docs/PROJECT_STRUCTURE.md) (English)
+- [贡献指南](docs/CONTRIBUTING.md) (English)
 - [使用示例](examples/README.md) (English)
-- [开发总结](SUMMARY.md) (English)
 - [fish shell 文档](https://fishshell.com/docs/current/)
 - [Fisher 插件管理器](https://github.com/jorgebucaran/fisher)
 

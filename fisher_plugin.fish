@@ -1,10 +1,10 @@
-# Fisher plugin manifest for Archivist
+# Fisher plugin manifest for Fish Extractor
 # This file is used by Fisher to install the plugin
 
 # Plugin metadata
-set -l plugin_name archivist
-set -l plugin_version 1.0.0
-set -l plugin_description "High-quality archive management for fish shell"
+set -l plugin_name fish-extractor
+set -l plugin_version 2.0.0
+set -l plugin_description "Professional archive extraction and compression tool for fish shell"
 
 # Files to install
 set -l functions_dir (status dirname)/functions

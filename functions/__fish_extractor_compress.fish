@@ -1,11 +1,11 @@
-# Archive compression command for Archivist (fish 4.12+)
+# Archive compression command for Fish Extractor (fish 4.12+)
 # Supports smart format selection, multiple compression algorithms, and comprehensive options
 
-function __archivist_compress --description 'Create archives with intelligent format selection and options'
+function __fish_extractor_compress --description 'Create archives with intelligent format selection and options'
     set -l usage "\
-archc - Create archives intelligently
+compressor - Create archives intelligently
 
-Usage: archc [OPTIONS] OUTPUT [INPUT...]
+Usage: compressor [OPTIONS] OUTPUT [INPUT...]
 
 Options:
   -F, --format FMT        Archive format (see formats below)
@@ -23,6 +23,8 @@ Options:
       --no-progress       Disable progress indicators
       --smart             Automatically choose best format
       --solid             Create solid archive (7z only)
+      --checksum          Generate checksum file after creation
+      --split SIZE        Split archive into parts of SIZE (e.g., 100M, 1G)
       --dry-run           Show what would be done without executing
       --help              Display this help message
 
@@ -41,13 +43,15 @@ Formats:
   auto          Automatically detect best format (default)
 
 Examples:
-  archc backup.tar.zst ./data           # Fast compression with zstd
-  archc -F tar.xz logs.tar.xz /var/log  # Maximum compression
-  archc --smart output.auto ./project   # Auto-select format
-  archc -L 9 archive.7z files/          # Maximum 7z compression
-  archc -e -p secret secure.zip docs/   # Encrypted ZIP
-  archc -x '*.tmp' -x '*.log' out.tgz . # Exclude patterns
-  archc -u existing.tar.gz newfile.txt  # Update existing archive
+  compressor backup.tar.zst ./data           # Fast compression with zstd
+  compressor -F tar.xz logs.tar.xz /var/log  # Maximum compression
+  compressor --smart output.auto ./project   # Auto-select format
+  compressor -L 9 archive.7z files/          # Maximum 7z compression
+  compressor -e -p secret secure.zip docs/   # Encrypted ZIP
+  compressor -x '*.tmp' -x '*.log' out.tgz . # Exclude patterns
+  compressor -u existing.tar.gz newfile.txt  # Update existing archive
+  compressor --checksum backup.txz data/     # Create with checksum
+  compressor --split 100M large.zip huge/    # Split into 100MB parts
 "
 
     # Parse arguments
@@ -66,6 +70,8 @@ Examples:
     set -l show_progress 1
     set -l smart 0
     set -l solid 0
+    set -l gen_checksum 0
+    set -l split_size ''
     set -l dry_run 0
 
     argparse -i \
@@ -84,6 +90,8 @@ Examples:
         'no-progress' \
         'smart' \
         'solid' \
+        'checksum' \
+        'split=' \
         'dry-run' \
         'h/help' \
         -- $argv
@@ -99,7 +107,7 @@ Examples:
     set -q _flag_threads; and set threads $_flag_threads
     set -q _flag_encrypt; and set encrypt 1
     set -q _flag_password; and set password $_flag_password
-    set -q _flag_chdir; and set chdir (__archivist__sanitize_path $_flag_chdir)
+    set -q _flag_chdir; and set chdir (__fish_extractor_sanitize_path $_flag_chdir)
     set -q _flag_include_glob; and set include_globs $_flag_include_glob
     set -q _flag_exclude_glob; and set exclude_globs $_flag_exclude_glob
     set -q _flag_update; and set update 1
@@ -109,16 +117,18 @@ Examples:
     set -q _flag_no_progress; and set show_progress 0
     set -q _flag_smart; and set smart 1
     set -q _flag_solid; and set solid 1
+    set -q _flag_checksum; and set gen_checksum 1
+    set -q _flag_split; and set split_size $_flag_split
     set -q _flag_dry_run; and set dry_run 1
 
     # Validate arguments
     if test (count $argv) -lt 1
-        __archivist__log error "Output archive not specified"
+        __fish_extractor_log error "Output archive not specified"
         echo $usage >&2
         return 2
     end
 
-    set -l output (__archivist__sanitize_path $argv[1])
+    set -l output (__fish_extractor_sanitize_path $argv[1])
     set -l inputs $argv[2..-1]
     
     # Default to current directory if no inputs
@@ -128,21 +138,24 @@ Examples:
 
     # Validate chdir if specified
     if test -n "$chdir"; and not test -d "$chdir"
-        __archivist__log error "Directory not found: $chdir"
+        __fish_extractor_log error "Directory not found: $chdir"
         return 1
     end
 
     # Smart format selection
     if test $smart -eq 1; or test "$format" = auto
         # Detect from output filename if it has an extension
-        set -l detected (__archivist__detect_format "$output")
+        set -l detected (__fish_extractor_detect_format "$output")
         if test "$detected" != unknown
             set format $detected
-            __archivist__log debug "Detected format from filename: $format"
+            __fish_extractor_log debug "Detected format from filename: $format"
         else
             # Analyze input content
-            set format (__archivist__smart_format $inputs)
-            __archivist__log info "Smart format selected: $format"
+            set format (__fish_extractor_smart_format $inputs)
+            __fish_extractor_log info "Smart format selected: $format"
+            
+            # Update output filename with appropriate extension
+            set output "$output."(string replace tar. '' -- $format)
         end
     end
 
@@ -169,17 +182,17 @@ Examples:
     end
 
     # Resolve thread count
-    set -l thread_count (__archivist__resolve_threads $threads)
+    set -l thread_count (__fish_extractor_resolve_threads $threads)
 
     # Validate compression level
-    set -l comp_level (__archivist__validate_level $format $level)
+    set -l comp_level (__fish_extractor_validate_level $format $level)
 
     # Build file list
     set -l file_list
     if test -n "$chdir"
         pushd "$chdir" >/dev/null
         or begin
-            __archivist__log error "Failed to change directory to: $chdir"
+            __fish_extractor_log error "Failed to change directory to: $chdir"
             return 1
         end
     end
@@ -232,22 +245,42 @@ Examples:
 
     # Verify we have files to compress
     if test (count $file_list) -eq 0
-        __archivist__log error "No files to compress"
+        __fish_extractor_log error "No files to compress"
         return 1
+    end
+
+    # Calculate total size
+    set -l total_size 0
+    for file in $file_list
+        if test -f "$file"
+            set -l fsize (__fish_extractor_get_file_size "$file")
+            set total_size (math $total_size + $fsize)
+        end
     end
 
     # Dry run mode
     if test $dry_run -eq 1
-        __archivist__log info "[DRY-RUN] Would create: $output"
-        __archivist__log info "[DRY-RUN] Format: $format"
-        __archivist__log info "[DRY-RUN] Files: "(count $file_list)
+        __fish_extractor_log info "[DRY-RUN] Would create: $output"
+        __fish_extractor_log info "[DRY-RUN] Format: $format"
+        __fish_extractor_log info "[DRY-RUN] Compression level: $comp_level"
+        __fish_extractor_log info "[DRY-RUN] Files: "(count $file_list)" ("(__fish_extractor_human_size $total_size)")"
         test $verbose -eq 1; and printf "  - %s\n" $file_list
         return 0
     end
 
+    # Show info
+    if test $quiet -eq 0
+        __fish_extractor_log info "Creating archive: $output"
+        if test $verbose -eq 1
+            __fish_extractor_log debug "  Format: $format"
+            __fish_extractor_log debug "  Compression level: $comp_level"
+            __fish_extractor_log debug "  Files: "(count $file_list)
+            __fish_extractor_log debug "  Total size: "(__fish_extractor_human_size $total_size)
+            __fish_extractor_log debug "  Threads: $thread_count"
+        end
+    end
+
     # Perform compression
-    test $quiet -eq 0; and __archivist__log info "Creating archive: $output"
-    
     set -l compress_opts \
         "$output" \
         $file_list \
@@ -263,11 +296,36 @@ Examples:
         $show_progress \
         $solid
 
-    if __archivist__create_archive $compress_opts
-        test $quiet -eq 0; and __archivist__colorize green "✓ Created: $output\n"
+    if __fish_extractor_create_archive $compress_opts
+        if test $quiet -eq 0
+            set -l out_size (__fish_extractor_get_file_size "$output")
+            set -l ratio 0
+            if test $total_size -gt 0
+                set ratio (math -s1 "100 - ($out_size * 100 / $total_size)")
+            end
+            __fish_extractor_colorize green "✓ Created: $output ("(__fish_extractor_human_size $out_size)", $ratio% compression)\n"
+        end
+        
+        # Generate checksum if requested
+        if test $gen_checksum -eq 1
+            set -l checksum_file "$output.sha256"
+            __fish_extractor_log info "Generating checksum: $checksum_file"
+            __fish_extractor_calculate_hash "$output" sha256 > "$checksum_file"
+        end
+        
+        # Split archive if requested
+        if test -n "$split_size"
+            __fish_extractor_log info "Splitting archive into $split_size parts..."
+            if __fish_extractor_split_archive "$output" "$split_size"
+                __fish_extractor_log info "✓ Archive split complete"
+            else
+                __fish_extractor_log warn "Failed to split archive"
+            end
+        end
+        
         return 0
     else
-        __archivist__log error "Failed to create archive: $output"
+        __fish_extractor_log error "Failed to create archive: $output"
         return 1
     end
 end
@@ -276,7 +334,7 @@ end
 # Internal: Archive Creation Logic
 # ============================================================================
 
-function __archivist__create_archive --description 'Internal: perform actual compression'
+function __fish_extractor_create_archive --description 'Internal: perform actual compression'
     set -l output $argv[1]
     set -l files $argv[2..-13]  # Files come before the fixed options
     set -l format $argv[-12]
@@ -294,40 +352,40 @@ function __archivist__create_archive --description 'Internal: perform actual com
     # Dispatch to format-specific handler
     switch $format
         case tar
-            __archivist__create_tar "$output" $files none $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files none $level $threads $verbose $progress "$chdir" $update
             
         case tar.gz
-            __archivist__create_tar "$output" $files gzip $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files gzip $level $threads $verbose $progress "$chdir" $update
             
         case tar.bz2
-            __archivist__create_tar "$output" $files bzip2 $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files bzip2 $level $threads $verbose $progress "$chdir" $update
             
         case tar.xz
-            __archivist__create_tar "$output" $files xz $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files xz $level $threads $verbose $progress "$chdir" $update
             
         case tar.zst
-            __archivist__create_tar "$output" $files zstd $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files zstd $level $threads $verbose $progress "$chdir" $update
             
         case tar.lz4
-            __archivist__create_tar "$output" $files lz4 $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files lz4 $level $threads $verbose $progress "$chdir" $update
             
         case tar.lz
-            __archivist__create_tar "$output" $files lzip $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files lzip $level $threads $verbose $progress "$chdir" $update
             
         case tar.lzo
-            __archivist__create_tar "$output" $files lzop $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files lzop $level $threads $verbose $progress "$chdir" $update
             
         case tar.br
-            __archivist__create_tar "$output" $files brotli $level $threads $verbose $progress "$chdir" $update
+            __fish_extractor_create_tar "$output" $files brotli $level $threads $verbose $progress "$chdir" $update
             
         case zip
-            __archivist__create_zip "$output" $files $level $encrypt "$password" $verbose $update "$chdir"
+            __fish_extractor_create_zip "$output" $files $level $encrypt "$password" $verbose $update "$chdir"
             
         case 7z
-            __archivist__create_7z "$output" $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
+            __fish_extractor_create_7z "$output" $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
             
         case '*'
-            __archivist__log error "Unsupported format: $format"
+            __fish_extractor_log error "Unsupported format: $format"
             return 2
     end
 end
@@ -336,7 +394,7 @@ end
 # Format-Specific Compression Functions
 # ============================================================================
 
-function __archivist__create_tar --description 'Create tar archives with optional compression'
+function __fish_extractor_create_tar --description 'Create tar archives with optional compression'
     set -l output $argv[1]
     set -l files $argv[2..-9]
     set -l compressor $argv[-8]
@@ -347,7 +405,7 @@ function __archivist__create_tar --description 'Create tar archives with optiona
     set -l chdir $argv[-3]
     set -l update $argv[-2]
 
-    __archivist__require_cmds tar; or return 127
+    __fish_extractor_require_cmds tar; or return 127
 
     # Build tar options
     set -l tar_opts
@@ -366,69 +424,82 @@ function __archivist__create_tar --description 'Create tar archives with optiona
     if test "$compressor" != none
         switch $compressor
             case gzip
-                __archivist__require_cmds gzip; or return 127
-                if test $progress -eq 1; and __archivist__can_progress
-                    # Use pipeline with pv
-                    if test -n "$chdir"
-                        tar $tar_opts -f - $files | pv | gzip -$level > "$output"
+                __fish_extractor_require_cmds gzip; or return 127
+                # Try pigz for parallel compression if available
+                if command -q pigz
+                    if test $progress -eq 1; and __fish_extractor_can_progress
+                        tar $tar_opts -f - $files | pigz -$level -p $threads | __fish_extractor_progress_bar 0 > "$output"
                     else
-                        tar $tar_opts -f - $files | pv | gzip -$level > "$output"
+                        tar $tar_opts -f - $files | pigz -$level -p $threads > "$output"
                     end
                 else
-                    set -a tar_opts -z -f "$output"
-                    env GZIP=-$level tar $tar_opts $files
+                    if test $progress -eq 1; and __fish_extractor_can_progress
+                        tar $tar_opts -f - $files | gzip -$level | __fish_extractor_progress_bar 0 > "$output"
+                    else
+                        set -a tar_opts -z -f "$output"
+                        env GZIP=-$level tar $tar_opts $files
+                    end
                 end
                 
             case bzip2
-                __archivist__require_cmds bzip2; or return 127
-                if test $progress -eq 1; and __archivist__can_progress
-                    tar $tar_opts -f - $files | pv | bzip2 -$level > "$output"
+                __fish_extractor_require_cmds bzip2; or return 127
+                # Try pbzip2 for parallel compression if available
+                if command -q pbzip2
+                    if test $progress -eq 1; and __fish_extractor_can_progress
+                        tar $tar_opts -f - $files | pbzip2 -$level -p$threads | __fish_extractor_progress_bar 0 > "$output"
+                    else
+                        tar $tar_opts -f - $files | pbzip2 -$level -p$threads > "$output"
+                    end
                 else
-                    set -a tar_opts -j -f "$output"
-                    env BZIP2=-$level tar $tar_opts $files
+                    if test $progress -eq 1; and __fish_extractor_can_progress
+                        tar $tar_opts -f - $files | bzip2 -$level | __fish_extractor_progress_bar 0 > "$output"
+                    else
+                        set -a tar_opts -j -f "$output"
+                        env BZIP2=-$level tar $tar_opts $files
+                    end
                 end
                 
             case xz
-                __archivist__require_cmds xz; or return 127
-                if test $progress -eq 1; and __archivist__can_progress
-                    tar $tar_opts -f - $files | pv | xz -$level -T$threads > "$output"
+                __fish_extractor_require_cmds xz; or return 127
+                if test $progress -eq 1; and __fish_extractor_can_progress
+                    tar $tar_opts -f - $files | xz -$level -T$threads | __fish_extractor_progress_bar 0 > "$output"
                 else
                     set -a tar_opts --use-compress-program="xz -$level -T$threads" -f "$output"
                     tar $tar_opts $files
                 end
                 
             case zstd
-                __archivist__require_cmds zstd; or return 127
-                if test $progress -eq 1; and __archivist__can_progress
-                    tar $tar_opts -f - $files | pv | zstd -$level -T$threads -q -o "$output"
+                __fish_extractor_require_cmds zstd; or return 127
+                if test $progress -eq 1; and __fish_extractor_can_progress
+                    tar $tar_opts -f - $files | zstd -$level -T$threads -q | __fish_extractor_progress_bar 0 > "$output"
                 else
                     set -a tar_opts --use-compress-program="zstd -$level -T$threads -q" -f "$output"
                     tar $tar_opts $files
                 end
                 
             case lz4
-                __archivist__require_cmds lz4; or return 127
-                if test $progress -eq 1; and __archivist__can_progress
-                    tar $tar_opts -f - $files | pv | lz4 -$level > "$output"
+                __fish_extractor_require_cmds lz4; or return 127
+                if test $progress -eq 1; and __fish_extractor_can_progress
+                    tar $tar_opts -f - $files | lz4 -$level | __fish_extractor_progress_bar 0 > "$output"
                 else
                     set -a tar_opts --use-compress-program="lz4 -$level" -f "$output"
                     tar $tar_opts $files
                 end
                 
             case lzip
-                __archivist__require_cmds lzip; or return 127
+                __fish_extractor_require_cmds lzip; or return 127
                 set -a tar_opts --lzip -f "$output"
                 env LZIP=-$level tar $tar_opts $files
                 
             case lzop
-                __archivist__require_cmds lzop; or return 127
+                __fish_extractor_require_cmds lzop; or return 127
                 set -a tar_opts --lzop -f "$output"
                 env LZOP=-$level tar $tar_opts $files
                 
             case brotli
-                __archivist__require_cmds brotli; or return 127
-                if test $progress -eq 1; and __archivist__can_progress
-                    tar $tar_opts -f - $files | pv | brotli -$level -o "$output"
+                __fish_extractor_require_cmds brotli; or return 127
+                if test $progress -eq 1; and __fish_extractor_can_progress
+                    tar $tar_opts -f - $files | brotli -$level | __fish_extractor_progress_bar 0 > "$output"
                 else
                     tar $tar_opts -f - $files | brotli -$level -o "$output"
                 end
@@ -440,7 +511,7 @@ function __archivist__create_tar --description 'Create tar archives with optiona
     end
 end
 
-function __archivist__create_zip --description 'Create ZIP archives'
+function __fish_extractor_create_zip --description 'Create ZIP archives'
     set -l output $argv[1]
     set -l files $argv[2..-8]
     set -l level $argv[-7]
@@ -450,7 +521,7 @@ function __archivist__create_zip --description 'Create ZIP archives'
     set -l update $argv[-3]
     set -l chdir $argv[-2]
 
-    __archivist__require_cmds zip; or return 127
+    __fish_extractor_require_cmds zip; or return 127
 
     set -l zip_opts
     
@@ -487,7 +558,7 @@ function __archivist__create_zip --description 'Create ZIP archives'
     end
 end
 
-function __archivist__create_7z --description 'Create 7z archives'
+function __fish_extractor_create_7z --description 'Create 7z archives'
     set -l output $argv[1]
     set -l files $argv[2..-10]
     set -l level $argv[-9]
@@ -499,7 +570,7 @@ function __archivist__create_7z --description 'Create 7z archives'
     set -l update $argv[-3]
     set -l chdir $argv[-2]
 
-    __archivist__require_cmds 7z; or return 127
+    __fish_extractor_require_cmds 7z; or return 127
 
     set -l opts
     
@@ -525,11 +596,49 @@ function __archivist__create_7z --description 'Create 7z archives'
     # Change directory if needed
     if test -n "$chdir"
         pushd "$chdir" >/dev/null
-        7z $opts "$output" $files >/dev/null
+        if test $verbose -eq 1
+            7z $opts "$output" $files
+        else
+            7z $opts "$output" $files >/dev/null
+        end
         set -l status_code $status
         popd >/dev/null
         return $status_code
     else
-        7z $opts "$output" $files >/dev/null
+        if test $verbose -eq 1
+            7z $opts "$output" $files
+        else
+            7z $opts "$output" $files >/dev/null
+        end
+    end
+end
+
+# ============================================================================
+# Archive Splitting
+# ============================================================================
+
+function __fish_extractor_split_archive --description 'Split archive into smaller parts'
+    set -l archive $argv[1]
+    set -l size $argv[2]
+    
+    test -f "$archive"; or return 1
+    
+    if command -q split
+        # Convert size to bytes for split command
+        set -l size_bytes (string replace -r 'M$' '000000' -- $size)
+        set size_bytes (string replace -r 'G$' '000000000' -- $size_bytes)
+        set size_bytes (string replace -r 'K$' '000' -- $size_bytes)
+        
+        split -b $size_bytes "$archive" "$archive.part"
+        
+        # Create a join script
+        echo "#!/bin/sh" > "$archive.join.sh"
+        echo "cat $archive.part* > $archive" >> "$archive.join.sh"
+        chmod +x "$archive.join.sh"
+        
+        return 0
+    else
+        __fish_extractor_log error "'split' command not found"
+        return 1
     end
 end

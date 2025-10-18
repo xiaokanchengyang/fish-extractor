@@ -3,9 +3,10 @@
 
 function __fish_extractor_extract --description 'Extract archives with smart detection and extensive format support'
     set -l usage "\
-extractor - Intelligently extract archives
+extract / extractor - Intelligently extract archives with automatic format detection
 
-Usage: extractor [OPTIONS] FILE...
+Usage: extract [OPTIONS] FILE...
+   or: extractor [OPTIONS] FILE...
 
 Options:
   -d, --dest DIR          Destination directory (default: derived from archive name)
@@ -25,7 +26,17 @@ Options:
       --dry-run           Show what would be done without executing
       --backup            Create backup of existing files before extraction
       --checksum          Generate checksum file after extraction
+      --auto-rename       Automatically rename output if destination exists
+      --timestamp         Add timestamp to extraction directory name
+      --preserve-perms    Preserve file permissions (default on)
+      --no-preserve-perms Don't preserve file permissions
       --help              Display this help message
+
+Format Detection:
+  Automatically detects formats by:
+  - File extension (.tar.gz, .zip, .7z, etc.)
+  - MIME type analysis (using 'file' command)
+  - Fallback to bsdtar/7z for unknown formats
 
 Supported Formats:
   - Compressed tar: .tar.gz, .tar.bz2, .tar.xz, .tar.zst, .tar.lz4, .tar.lz, .tar.lzo, .tar.br
@@ -36,14 +47,14 @@ Supported Formats:
   - And more via automatic fallback to bsdtar/7z
 
 Examples:
-  extractor file.tar.gz                    # Extract to ./file/
-  extractor -d output/ archive.zip         # Extract to ./output/
-  extractor --strip 1 dist.tar.xz          # Strip top-level directory
-  extractor -p secret encrypted.7z         # Extract encrypted archive
-  extractor --list archive.zip             # List contents only
-  extractor --test backup.tar.gz           # Test integrity
-  extractor *.tar.gz                       # Extract multiple archives
-  extractor --verify --checksum data.txz   # Verify and generate checksum
+  extract file.tar.gz                      # Extract to ./file/
+  extract -d output/ archive.zip           # Extract to ./output/
+  extract --strip 1 dist.tar.xz            # Strip top-level directory
+  extract -p secret encrypted.7z           # Extract encrypted archive
+  extract --list archive.zip               # List contents only
+  extract --test backup.tar.gz             # Test integrity
+  extract *.tar.gz                         # Extract multiple archives
+  extract --verify --checksum data.txz     # Verify and generate checksum
 "
 
     # Parse arguments
@@ -63,6 +74,9 @@ Examples:
     set -l dry_run 0
     set -l backup 0
     set -l gen_checksum 0
+    set -l auto_rename 0
+    set -l add_timestamp 0
+    set -l preserve_perms 1
 
     argparse -i \
         'd/dest=' \
@@ -82,6 +96,10 @@ Examples:
         'dry-run' \
         'backup' \
         'checksum' \
+        'auto-rename' \
+        'timestamp' \
+        'preserve-perms' \
+        'no-preserve-perms' \
         'h/help' \
         -- $argv
     or begin
@@ -108,6 +126,9 @@ Examples:
     set -q _flag_dry_run; and set dry_run 1
     set -q _flag_backup; and set backup 1
     set -q _flag_checksum; and set gen_checksum 1
+    set -q _flag_auto_rename; and set auto_rename 1
+    set -q _flag_timestamp; and set add_timestamp 1
+    set -q _flag_no_preserve_perms; and set preserve_perms 0
 
     # Validate arguments
     set -l files $argv
@@ -158,6 +179,23 @@ Examples:
         if test -z "$extract_dir"
             set extract_dir (__fish_extractor_default_extract_dir "$archive_path")
         end
+        
+        # Add timestamp if requested
+        if test $add_timestamp -eq 1
+            set extract_dir "$extract_dir-"(date +%Y%m%d_%H%M%S)
+        end
+        
+        # Auto-rename if destination exists
+        if test $auto_rename -eq 1; and test -e "$extract_dir"
+            set -l counter 1
+            set -l base_dir $extract_dir
+            while test -e "$extract_dir"
+                set extract_dir "$base_dir-$counter"
+                set counter (math $counter + 1)
+            end
+            test $quiet -eq 0; and __fish_extractor_log info "Auto-renamed to: $extract_dir"
+        end
+        
         set extract_dir (__fish_extractor_sanitize_path $extract_dir)
 
         # Handle different operation modes

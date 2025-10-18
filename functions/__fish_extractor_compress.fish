@@ -3,9 +3,10 @@
 
 function __fish_extractor_compress --description 'Create archives with intelligent format selection and options'
     set -l usage "\
-compressor - Create archives intelligently
+compress / compressor - Create archives with smart format selection and optimization
 
-Usage: compressor [OPTIONS] OUTPUT [INPUT...]
+Usage: compress [OPTIONS] OUTPUT [INPUT...]
+   or: compressor [OPTIONS] OUTPUT [INPUT...]
 
 Options:
   -F, --format FMT        Archive format (see formats below)
@@ -26,7 +27,16 @@ Options:
       --checksum          Generate checksum file after creation
       --split SIZE        Split archive into parts of SIZE (e.g., 100M, 1G)
       --dry-run           Show what would be done without executing
+      --timestamp         Add timestamp to archive name
+      --auto-rename       Automatically rename if output exists
+      --compare           Compare compression efficiency across formats
       --help              Display this help message
+
+Smart Format Selection:
+  With --smart or format 'auto', automatically chooses best format:
+  - High text content (70%+) → tar.xz (maximum compression)
+  - Mixed content (30-70%) → tar.gz (balanced)
+  - Binary content (<30%) → tar.zst (fast, efficient)
 
 Formats:
   tar           Uncompressed tar
@@ -43,15 +53,15 @@ Formats:
   auto          Automatically detect best format (default)
 
 Examples:
-  compressor backup.tar.zst ./data           # Fast compression with zstd
-  compressor -F tar.xz logs.tar.xz /var/log  # Maximum compression
-  compressor --smart output.auto ./project   # Auto-select format
-  compressor -L 9 archive.7z files/          # Maximum 7z compression
-  compressor -e -p secret secure.zip docs/   # Encrypted ZIP
-  compressor -x '*.tmp' -x '*.log' out.tgz . # Exclude patterns
-  compressor -u existing.tar.gz newfile.txt  # Update existing archive
-  compressor --checksum backup.txz data/     # Create with checksum
-  compressor --split 100M large.zip huge/    # Split into 100MB parts
+  compress backup.tar.zst ./data             # Fast compression with zstd
+  compress -F tar.xz logs.tar.xz /var/log    # Maximum compression
+  compress --smart output.auto ./project     # Auto-select format
+  compress -L 9 archive.7z files/            # Maximum 7z compression
+  compress -e -p secret secure.zip docs/     # Encrypted ZIP
+  compress -x '*.tmp' -x '*.log' out.tgz .   # Exclude patterns
+  compress -u existing.tar.gz newfile.txt    # Update existing archive
+  compress --checksum backup.txz data/       # Create with checksum
+  compress --split 100M large.zip huge/      # Split into 100MB parts
 "
 
     # Parse arguments
@@ -73,6 +83,9 @@ Examples:
     set -l gen_checksum 0
     set -l split_size ''
     set -l dry_run 0
+    set -l add_timestamp 0
+    set -l auto_rename 0
+    set -l compare_formats 0
 
     argparse -i \
         'F/format=' \
@@ -93,6 +106,9 @@ Examples:
         'checksum' \
         'split=' \
         'dry-run' \
+        'timestamp' \
+        'auto-rename' \
+        'compare' \
         'h/help' \
         -- $argv
     or begin
@@ -120,6 +136,9 @@ Examples:
     set -q _flag_checksum; and set gen_checksum 1
     set -q _flag_split; and set split_size $_flag_split
     set -q _flag_dry_run; and set dry_run 1
+    set -q _flag_timestamp; and set add_timestamp 1
+    set -q _flag_auto_rename; and set auto_rename 1
+    set -q _flag_compare; and set compare_formats 1
 
     # Validate arguments
     if test (count $argv) -lt 1
@@ -134,6 +153,27 @@ Examples:
     # Default to current directory if no inputs
     if test (count $inputs) -eq 0
         set inputs .
+    end
+    
+    # Add timestamp if requested
+    if test $add_timestamp -eq 1
+        set -l base_name (string replace -r '\\.[^.]+$' '' -- (basename $output))
+        set -l extension (string match -r '\\.[^.]+$' -- (basename $output))
+        set -l dir_name (dirname $output)
+        set output "$dir_name/$base_name-"(date +%Y%m%d_%H%M%S)"$extension"
+    end
+    
+    # Auto-rename if output exists
+    if test $auto_rename -eq 1; and test -e "$output"
+        set -l counter 1
+        set -l base_output $output
+        set -l base_name (string replace -r '\\.[^.]+$' '' -- $output)
+        set -l extension (string match -r '\\.[^.]+$' -- $output)
+        while test -e "$output"
+            set output "$base_name-$counter$extension"
+            set counter (math $counter + 1)
+        end
+        test $quiet -eq 0; and __fish_extractor_log info "Auto-renamed to: $output"
     end
 
     # Validate chdir if specified

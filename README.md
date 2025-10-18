@@ -93,46 +93,52 @@ ext-doctor
 
 ## 📖 Usage
 
-### Archive Extraction (`extractor`)
+### Archive Extraction (`extract` / `extractor`)
 
 Extract archives with intelligent format detection:
 
 ```fish
 # Basic extraction
-extractor file.tar.gz                    # Extract to ./file/
+extract file.tar.gz                      # Extract to ./file/
 
 # Specify destination
-extractor -d output/ archive.zip         # Extract to ./output/
+extract -d output/ archive.zip           # Extract to ./output/
 
 # Strip leading directories (useful for nested archives)
-extractor --strip 1 dist.tar.xz          # Remove top-level directory
+extract --strip 1 dist.tar.xz            # Remove top-level directory
 
 # Extract encrypted archives
-extractor -p secret encrypted.7z         # Provide password
+extract -p secret encrypted.7z           # Provide password
 
 # List contents without extracting
-extractor --list archive.zip             # Preview contents
+extract --list archive.zip               # Preview contents
 
 # Test integrity
-extractor --test backup.tar.gz           # Verify archive is valid
+extract --test backup.tar.gz             # Verify archive is valid
 
 # Verify with checksum
-extractor --verify data.tar.xz           # Check integrity and checksum
+extract --verify data.tar.xz             # Check integrity and checksum
 
 # Extract multiple archives
-extractor *.tar.gz                       # Extract all .tar.gz files
+extract *.tar.gz                         # Extract all .tar.gz files
 
 # Parallel extraction with custom threads
-extractor -t 16 large-archive.tar.zst    # Use 16 threads
+extract -t 16 large-archive.tar.zst      # Use 16 threads
 
 # Create backup before extraction
-extractor --backup --force archive.zip   # Backup existing directory
+extract --backup --force archive.zip     # Backup existing directory
 
 # Extract with checksum generation
-extractor --checksum important.txz       # Generate sha256 checksum
+extract --checksum important.txz         # Generate sha256 checksum
+
+# Auto-rename if destination exists
+extract --auto-rename archive.zip        # Creates archive-1, archive-2, etc.
+
+# Add timestamp to extraction directory
+extract --timestamp backup.tar.gz        # Creates backup-20231215_143022/
 
 # Verbose output
-extractor -v complicated.7z              # Show detailed progress
+extract -v complicated.7z                # Show detailed progress
 ```
 
 #### Options
@@ -157,49 +163,55 @@ extractor -v complicated.7z              # Show detailed progress
     --help              Display help
 ```
 
-### Archive Compression (`compressor`)
+### Archive Compression (`compress` / `compressor`)
 
 Create archives with smart format selection:
 
 ```fish
 # Basic compression
-compressor backup.tar.zst ./data          # Fast compression with zstd
+compress backup.tar.zst ./data           # Fast compression with zstd
 
 # Maximum compression
-compressor -F tar.xz -L 9 logs.tar.xz /var/log
+compress -F tar.xz -L 9 logs.tar.xz /var/log
 
 # Smart format (auto-detect best compression)
-compressor --smart output.auto ./project
+compress --smart output.auto ./project
 
 # Create encrypted archive
-compressor -e -p secret secure.zip docs/
+compress -e -p secret secure.zip docs/
 
 # Exclude patterns
-compressor -x '*.tmp' -x '*.log' clean.tgz .
+compress -x '*.tmp' -x '*.log' clean.tgz .
 
 # Include only specific files
-compressor -i '*.txt' -i '*.md' docs.zip .
+compress -i '*.txt' -i '*.md' docs.zip .
 
 # Update existing archive
-compressor -u existing.tar.gz newfile.txt
+compress -u existing.tar.gz newfile.txt
 
 # Multi-threaded compression
-compressor -t 16 -F tar.zst fast.tzst large-dir/
+compress -t 16 -F tar.zst fast.tzst large-dir/
 
 # Change directory before archiving
-compressor -C /var/www -F tar.xz web-backup.txz html/
+compress -C /var/www -F tar.xz web-backup.txz html/
 
 # Solid 7z archive (better compression)
-compressor --solid -F 7z backup.7z data/
+compress --solid -F 7z backup.7z data/
 
 # Create with checksum
-compressor --checksum backup.tar.xz data/
+compress --checksum backup.tar.xz data/
 
 # Split large archive
-compressor --split 100M large.zip huge-files/
+compress --split 100M large.zip huge-files/
+
+# Add timestamp to archive name
+compress --timestamp backup.tar.zst ./data  # Creates backup-20231215_143022.tar.zst
+
+# Auto-rename if file exists
+compress --auto-rename backup.tar.gz ./data  # Creates backup-1.tar.gz if backup.tar.gz exists
 
 # Verbose with custom level
-compressor -v -L 7 -F tar.xz archive.txz files/
+compress -v -L 7 -F tar.xz archive.txz files/
 ```
 
 #### Options
@@ -449,14 +461,17 @@ MIT License - see LICENSE file for details
 ## What's New in v2.0.0
 
 - 🎉 **Renamed to Fish Extractor** - Clearer, more focused name
-- 🔧 **New Commands**: `extractor`, `compressor`, `ext-doctor`
+- 🔧 **New Commands**: `extract`/`extractor`, `compress`/`compressor`, `ext-doctor`
 - ✨ **Enhanced Features**:
+  - Automatic format detection (extension + MIME type)
   - Checksum verification and generation
   - Automatic backup before extraction
   - Archive splitting support
+  - Auto-rename and timestamp options
   - Improved batch processing
   - Better error handling and diagnostics
   - Optimized performance with parallel tools (pigz, pbzip2)
 - 📊 **Better Output**: Compression ratios, file sizes, detailed statistics
 - 🎯 **Improved Smart Detection**: Better content analysis for format selection
 - 📝 **Complete Rewrite**: Cleaner code, better naming conventions, comprehensive comments
+- 📚 **Comprehensive Documentation**: Complete usage guide and project structure docs

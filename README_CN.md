@@ -1,4 +1,4 @@
-# Fish Extractor - Fish Shell 档案管理工具
+# Fish Extractor (鱼壳解压器) - Fish Shell 档案管理工具
 
 [![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

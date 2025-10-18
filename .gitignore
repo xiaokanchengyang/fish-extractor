@@ -1,0 +1,39 @@
+# Fish shell
+*.swp
+*~
+.DS_Store
+
+# Test files
+test_archives/
+*.test
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+*.tar.lz4
+*.tgz
+*.tbz2
+*.txz
+*.tzst
+*.tlz4
+*.zip
+*.7z
+*.rar
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS specific
+Thumbs.db
+.directory

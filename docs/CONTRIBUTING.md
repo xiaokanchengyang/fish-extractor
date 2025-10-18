@@ -30,7 +30,7 @@ We welcome feature suggestions! Please:
 
 1. **Fork and Clone**
    ```fish
-   git clone https://github.com/your-username/archivist.git
+   git clone https://github.com/xiaokanchengyang/fish-extractor.git
    cd archivist
    ```
 

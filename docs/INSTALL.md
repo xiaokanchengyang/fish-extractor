@@ -39,7 +39,7 @@ sudo pacman -S unrar lzip lzop brotli pigz pbzip2 pxz
 
 2. **Install Archivist**:
    ```fish
-   fisher install your-username/archivist
+   fisher install xiaokanchengyang/fish-extractor
    ```
 
 3. **Verify Installation**:
@@ -49,19 +49,19 @@ sudo pacman -S unrar lzip lzop brotli pigz pbzip2 pxz
 
 4. **Update** (when new version available):
    ```fish
-   fisher update your-username/archivist
+   fisher update xiaokanchengyang/fish-extractor
    ```
 
 5. **Uninstall**:
    ```fish
-   fisher remove your-username/archivist
+   fisher remove xiaokanchengyang/fish-extractor
    ```
 
 ### Method 2: Manual Installation
 
 1. **Clone the repository**:
    ```fish
-   git clone https://github.com/your-username/archivist.git ~/.config/fish/plugins/archivist
+   git clone https://github.com/xiaokanchengyang/fish-extractor.git ~/.config/fish/plugins/archivist
    ```
 
 2. **Create symbolic links**:
@@ -277,7 +277,7 @@ archx is a function with definition
 
 ### With Fisher
 ```fish
-fisher update your-username/archivist
+fisher update xiaokanchengyang/fish-extractor
 ```
 
 ### Manual Installation
@@ -291,7 +291,7 @@ source ~/.config/fish/config.fish
 
 ### With Fisher
 ```fish
-fisher remove your-username/archivist
+fisher remove xiaokanchengyang/fish-extractor
 ```
 
 ### Manual Installation

@@ -1,36 +1,50 @@
-# Archivist
+# Fish Extractor
 
 [![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/your-username/fish-extractor)
 
-**Archivist** is a high-quality, feature-rich archive management plugin for the [fish shell](https://fishshell.com/). It provides intelligent extraction and compression commands with smart format detection, extensive format support, progress indicators, and comprehensive options.
+**Fish Extractor** is a professional-grade archive management tool for the [fish shell](https://fishshell.com/). It provides powerful, intuitive commands for extracting and compressing archives with smart format detection, parallel processing, and comprehensive options.
+
+[English](README.md) | [简体中文](README_CN.md)
 
 ## ✨ Features
 
 - 🎯 **Smart Format Detection**: Automatically detects archive formats and chooses optimal compression
-- 🚀 **High Performance**: Multi-threaded compression/decompression where supported
-- 📦 **Extensive Format Support**: tar, gzip, bzip2, xz, zstd, lz4, lzip, lzo, brotli, zip, 7z, rar, iso, deb, rpm, and more
-- 🎨 **Beautiful Output**: Colorized messages and progress indicators
-- 🔐 **Encryption Support**: Password-protected archives (zip, 7z)
-- 🧪 **Testing & Verification**: Built-in integrity checking for archives
+- 🚀 **High Performance**: Multi-threaded compression/decompression with optimized algorithms
+- 📦 **Extensive Format Support**: 25+ formats including tar, gzip, bzip2, xz, zstd, lz4, zip, 7z, rar, iso, and more
+- 🎨 **Beautiful Output**: Colorized messages, progress bars, and detailed statistics
+- 🔐 **Encryption Support**: Password-protected archives for zip and 7z formats
+- 🧪 **Testing & Verification**: Built-in integrity checking and checksum verification
 - 🔧 **Highly Configurable**: Environment variables for customization
 - 📝 **Comprehensive Help**: Detailed usage information and examples
 - 🎓 **Intelligent Completions**: Context-aware tab completions
+- 💾 **Backup Support**: Automatic backup before extraction
+- ✂️ **Archive Splitting**: Split large archives into manageable parts
+- 📊 **Batch Processing**: Process multiple archives efficiently
 
 ## 📋 Requirements
 
-### Minimum (fish 4.12+)
+### Minimum Requirements (fish 4.12+)
 - `fish` >= 4.12
 - `file` (MIME type detection)
 - `tar`, `gzip` (basic functionality)
 
-### Recommended
+### Recommended Packages
 ```bash
-# Arch Linux
+# Arch Linux / Manjaro
 pacman -S file tar gzip bzip2 xz zstd lz4 unzip zip p7zip bsdtar
 
-# Optional for enhanced features
-pacman -S unrar pv lzip lzop brotli pigz pbzip2
+# Ubuntu / Debian
+apt-get install file tar gzip bzip2 xz-utils zstd liblz4-tool unzip zip p7zip-full libarchive-tools
+
+# macOS (Homebrew)
+brew install gnu-tar gzip bzip2 xz zstd lz4 p7zip libarchive
+
+# Optional: Enhanced performance
+pacman -S unrar pv lzip lzop brotli pigz pbzip2  # Arch
+apt-get install unrar pv lzip lzop brotli pigz pbzip2  # Debian/Ubuntu
+brew install unrar pv lzip lzop brotli pigz pbzip2  # macOS
 ```
 
 ### Feature Matrix
@@ -56,60 +70,69 @@ pacman -S unrar pv lzip lzop brotli pigz pbzip2
 
 ## 🚀 Installation
 
-### Using [Fisher](https://github.com/jorgebucaran/fisher)
+### Using [Fisher](https://github.com/jorgebucaran/fisher) (Recommended)
 
 ```fish
-fisher install your-username/archivist
+fisher install your-username/fish-extractor
 ```
 
 ### Manual Installation
 
 ```fish
-git clone https://github.com/your-username/archivist ~/.config/fish/archivist
-ln -s ~/.config/fish/archivist/functions/* ~/.config/fish/functions/
-ln -s ~/.config/fish/archivist/completions/* ~/.config/fish/completions/
-ln -s ~/.config/fish/archivist/conf.d/* ~/.config/fish/conf.d/
+git clone https://github.com/your-username/fish-extractor ~/.config/fish/fish-extractor
+ln -sf ~/.config/fish/fish-extractor/functions/*.fish ~/.config/fish/functions/
+ln -sf ~/.config/fish/fish-extractor/completions/*.fish ~/.config/fish/completions/
+ln -sf ~/.config/fish/fish-extractor/conf.d/*.fish ~/.config/fish/conf.d/
 ```
 
 ### Verify Installation
 
 ```fish
-archdoctor
+ext-doctor
 ```
 
 ## 📖 Usage
 
-### Archive Extraction (`archx`)
+### Archive Extraction (`extractor`)
 
 Extract archives with intelligent format detection:
 
 ```fish
 # Basic extraction
-archx file.tar.gz                    # Extract to ./file/
+extractor file.tar.gz                    # Extract to ./file/
 
 # Specify destination
-archx -d output/ archive.zip         # Extract to ./output/
+extractor -d output/ archive.zip         # Extract to ./output/
 
 # Strip leading directories (useful for nested archives)
-archx --strip 1 dist.tar.xz          # Remove top-level directory
+extractor --strip 1 dist.tar.xz          # Remove top-level directory
 
 # Extract encrypted archives
-archx -p secret encrypted.7z         # Provide password
+extractor -p secret encrypted.7z         # Provide password
 
 # List contents without extracting
-archx --list archive.zip             # Preview contents
+extractor --list archive.zip             # Preview contents
 
 # Test integrity
-archx --test backup.tar.gz           # Verify archive is valid
+extractor --test backup.tar.gz           # Verify archive is valid
+
+# Verify with checksum
+extractor --verify data.tar.xz           # Check integrity and checksum
 
 # Extract multiple archives
-archx *.tar.gz                       # Extract all .tar.gz files
+extractor *.tar.gz                       # Extract all .tar.gz files
 
 # Parallel extraction with custom threads
-archx -t 8 large-archive.tar.zst    # Use 8 threads
+extractor -t 16 large-archive.tar.zst    # Use 16 threads
+
+# Create backup before extraction
+extractor --backup --force archive.zip   # Backup existing directory
+
+# Extract with checksum generation
+extractor --checksum important.txz       # Generate sha256 checksum
 
 # Verbose output
-archx -v complicated.7z              # Show detailed progress
+extractor -v complicated.7z              # Show detailed progress
 ```
 
 #### Options
@@ -126,48 +149,57 @@ archx -v complicated.7z              # Show detailed progress
     --no-progress       Disable progress indicators
     --list              List contents only
     --test              Test archive integrity
+    --verify            Verify with checksum
     --flat              Extract without directory structure
+    --backup            Create backup before extraction
+    --checksum          Generate checksum file
     --dry-run           Show what would be done
     --help              Display help
 ```
 
-### Archive Compression (`archc`)
+### Archive Compression (`compressor`)
 
 Create archives with smart format selection:
 
 ```fish
 # Basic compression
-archc backup.tar.zst ./data          # Fast compression with zstd
+compressor backup.tar.zst ./data          # Fast compression with zstd
 
 # Maximum compression
-archc -F tar.xz -L 9 logs.tar.xz /var/log
+compressor -F tar.xz -L 9 logs.tar.xz /var/log
 
 # Smart format (auto-detect best compression)
-archc --smart output.auto ./project
+compressor --smart output.auto ./project
 
 # Create encrypted archive
-archc -e -p secret secure.zip docs/
+compressor -e -p secret secure.zip docs/
 
 # Exclude patterns
-archc -x '*.tmp' -x '*.log' clean.tgz .
+compressor -x '*.tmp' -x '*.log' clean.tgz .
 
 # Include only specific files
-archc -i '*.txt' -i '*.md' docs.zip .
+compressor -i '*.txt' -i '*.md' docs.zip .
 
 # Update existing archive
-archc -u existing.tar.gz newfile.txt
+compressor -u existing.tar.gz newfile.txt
 
 # Multi-threaded compression
-archc -t 16 -F tar.zst fast.tzst large-dir/
+compressor -t 16 -F tar.zst fast.tzst large-dir/
 
 # Change directory before archiving
-archc -C /var/www -F tar.xz web-backup.txz html/
+compressor -C /var/www -F tar.xz web-backup.txz html/
 
 # Solid 7z archive (better compression)
-archc --solid -F 7z backup.7z data/
+compressor --solid -F 7z backup.7z data/
+
+# Create with checksum
+compressor --checksum backup.tar.xz data/
+
+# Split large archive
+compressor --split 100M large.zip huge-files/
 
 # Verbose with custom level
-archc -v -L 7 -F tar.xz archive.txz files/
+compressor -v -L 7 -F tar.xz archive.txz files/
 ```
 
 #### Options
@@ -188,6 +220,8 @@ archc -v -L 7 -F tar.xz archive.txz files/
     --no-progress       Disable progress indicators
     --smart             Auto-select best format
     --solid             Solid archive (7z only)
+    --checksum          Generate checksum file
+    --split SIZE        Split into parts (e.g., 100M, 1G)
     --dry-run           Show what would be done
     --help              Display help
 ```
@@ -209,57 +243,54 @@ archc -v -L 7 -F tar.xz archive.txz files/
 | `7z`            | 7-Zip (high compression, encryption)            | Secure backups          |
 | `auto`          | Automatically choose best                       | Smart default           |
 
-### Environment Diagnostics (`archdoctor`)
+### Environment Diagnostics (`ext-doctor`)
 
 Check your system's archive handling capabilities:
 
 ```fish
 # Basic check
-archdoctor
+ext-doctor
 
 # Detailed system information
-archdoctor -v
+ext-doctor -v
 
 # Get installation suggestions
-archdoctor --fix
+ext-doctor --fix
+
+# Export diagnostic report
+ext-doctor --export
 
 # Quiet mode (only errors)
-archdoctor -q
+ext-doctor -q
 ```
 
 ## ⚙️ Configuration
 
-Configure Archivist by setting environment variables (e.g., in `~/.config/fish/config.fish`):
+Configure Fish Extractor by setting environment variables (e.g., in `~/.config/fish/config.fish`):
 
 ```fish
 # Color output: auto (default), always, never
-set -gx ARCHIVIST_COLOR auto
+set -Ux FISH_EXTRACTOR_COLOR auto
 
 # Progress indicators: auto (default), always, never
-set -gx ARCHIVIST_PROGRESS auto
+set -Ux FISH_EXTRACTOR_PROGRESS auto
 
 # Default thread count (default: CPU cores)
-set -gx ARCHIVIST_DEFAULT_THREADS 8
+set -Ux FISH_EXTRACTOR_DEFAULT_THREADS 8
 
 # Logging level: debug, info (default), warn, error
-set -gx ARCHIVIST_LOG_LEVEL info
+set -Ux FISH_EXTRACTOR_LOG_LEVEL info
 
 # Default format for smart selection
-set -gx ARCHIVIST_DEFAULT_FORMAT auto
-
-# Smart selection heuristic strength (1-3, default: 2)
-set -gx ARCHIVIST_SMART_LEVEL 2
-
-# Paranoid mode for extra safety checks (0=off, 1=on)
-set -gx ARCHIVIST_PARANOID 0
+set -Ux FISH_EXTRACTOR_DEFAULT_FORMAT auto
 ```
 
 ## 🎯 Smart Format Selection
 
-Archivist can automatically choose the best compression format based on your data:
+Fish Extractor can automatically choose the best compression format based on your data:
 
 ```fish
-archc --smart output.auto ./mydata
+compressor --smart output.auto ./mydata
 ```
 
 **Selection Logic:**
@@ -273,13 +304,13 @@ archc --smart output.auto ./mydata
 
 ```fish
 # Use zstd for large binary files (fast)
-archc -F tar.zst -t $(nproc) backup.tzst /large/dataset
+compressor -F tar.zst -t $(nproc) backup.tzst /large/dataset
 
 # Use xz for text-heavy content (best compression)
-archc -F tar.xz -t $(nproc) source.txz /code
+compressor -F tar.xz -t $(nproc) source.txz /code
 
 # Use lz4 for temporary archives (very fast)
-archc -F tar.lz4 temp.tlz4 /tmp/data
+compressor -F tar.lz4 temp.tlz4 /tmp/data
 ```
 
 ### Compression Level Guide
@@ -292,23 +323,52 @@ archc -F tar.lz4 temp.tlz4 /tmp/data
 
 ```fish
 # Create encrypted ZIP
-archc -e -p "strong-password" secure.zip sensitive/
+compressor -e -p "strong-password" secure.zip sensitive/
 
 # Create encrypted 7z with solid compression
-archc --solid -e -p "strong-password" -F 7z backup.7z data/
+compressor --solid -e -p "strong-password" -F 7z backup.7z data/
 ```
 
 ### Working with Large Archives
 
 ```fish
 # Show progress with pv
-archx large-archive.tar.zst  # Progress bar appears automatically
+extractor large-archive.tar.zst  # Progress bar appears automatically
 
 # Use multiple threads
-archx -t 16 huge-file.tar.xz
+extractor -t 16 huge-file.tar.xz
 
 # Test before extracting
-archx --test archive.7z && archx archive.7z
+extractor --test archive.7z && extractor archive.7z
+
+# Split large archive
+compressor --split 100M large.zip huge-files/
+```
+
+### Backup Workflows
+
+```fish
+# Daily backup with date
+compressor -F tar.zst backup-$(date +%Y%m%d).tzst ~/Documents
+
+# Incremental backup (update mode)
+compressor -u backup.tar.zst ~/Documents
+
+# Exclude cache and temp files
+compressor -x '*.cache' -x '*.tmp' -x '.git/*' clean-backup.tgz ~/project
+```
+
+### Development Workflows
+
+```fish
+# Package source code
+compressor -F tar.xz -x 'node_modules/*' -x '__pycache__/*' release.txz .
+
+# Create distributable archive with checksum
+compressor --smart --checksum -x '*.log' -x '.env' dist.auto ./app
+
+# Extract and verify
+extractor --verify --test release.txz && extractor release.txz
 ```
 
 ## 🔧 Troubleshooting
@@ -316,75 +376,52 @@ archx --test archive.7z && archx archive.7z
 ### Missing Tools
 
 ```fish
-archdoctor --fix  # Shows installation commands
+ext-doctor --fix  # Shows installation commands
 ```
 
 ### Extraction Fails
 
 ```fish
 # Test integrity first
-archx --test problematic.tar.gz
+extractor --test problematic.tar.gz
 
 # Try verbose mode
-archx -v problematic.tar.gz
+extractor -v problematic.tar.gz
 
 # Check available formats
-archdoctor -v
+ext-doctor -v
 ```
 
 ### Compression Issues
 
 ```fish
 # Verify inputs exist
-archc --dry-run output.tar.zst input/
+compressor --dry-run output.tar.zst input/
 
 # Check format support
-archdoctor
+ext-doctor
 ```
 
 ## 🔄 Comparison with Other Tools
 
-| Feature                | Archivist | `tar` + `*` | `atool` | `dtrx` |
-|------------------------|-----------|-------------|---------|--------|
-| Smart format detection | ✓         | -           | ✓       | ✓      |
-| Multi-threading        | ✓         | Manual      | -       | -      |
-| Progress indicators    | ✓         | Manual      | -       | -      |
-| Archive testing        | ✓         | Manual      | -       | -      |
-| Encryption support     | ✓         | -           | ✓       | -      |
-| Fish completions       | ✓         | Basic       | -       | -      |
-| Modern fish syntax     | ✓         | N/A         | N/A     | N/A    |
-
-## 📝 Examples
-
-### Backup Workflows
-
-```fish
-# Daily backup with date
-archc -F tar.zst backup-(date +%Y%m%d).tzst ~/Documents
-
-# Incremental backup (update mode)
-archc -u backup.tar.zst ~/Documents
-
-# Exclude cache and temp files
-archc -x '*.cache' -x '*.tmp' -x '.git/*' clean-backup.tgz ~/project
-```
-
-### Development Workflows
-
-```fish
-# Package source code
-archc -F tar.xz -x 'node_modules/*' -x '__pycache__/*' release.txz .
-
-# Create distributable archive
-archc --smart -x '*.log' -x '.env' dist.auto ./app
-
-# Extract and test
-archx --test release.txz && archx release.txz
-```
+| Feature                | Fish Extractor | `tar` + `*` | `atool` | `dtrx` |
+|------------------------|----------------|-------------|---------|--------|
+| Smart format detection | ✓              | -           | ✓       | ✓      |
+| Multi-threading        | ✓              | Manual      | -       | -      |
+| Progress indicators    | ✓              | Manual      | -       | -      |
+| Archive testing        | ✓              | Manual      | -       | -      |
+| Checksum verification  | ✓              | -           | -       | -      |
+| Encryption support     | ✓              | -           | ✓       | -      |
+| Batch processing       | ✓              | -           | -       | -      |
+| Archive splitting      | ✓              | Manual      | -       | -      |
+| Fish completions       | ✓              | Basic       | -       | -      |
+| Modern fish syntax     | ✓              | N/A         | N/A     | N/A    |
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📄 License
 
@@ -398,10 +435,28 @@ MIT License - see LICENSE file for details
 
 ## 📚 See Also
 
+- [Installation Guide](INSTALL.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Usage Examples](examples/README.md)
+- [Development Summary](SUMMARY.md)
 - [fish shell documentation](https://fishshell.com/docs/current/)
 - [Fisher plugin manager](https://github.com/jorgebucaran/fisher)
-- [Arch Linux wiki: Archive tools](https://wiki.archlinux.org/title/Archiving_and_compression)
 
 ---
 
 **Made with ❤️ for fish shell users**
+
+## What's New in v2.0.0
+
+- 🎉 **Renamed to Fish Extractor** - Clearer, more focused name
+- 🔧 **New Commands**: `extractor`, `compressor`, `ext-doctor`
+- ✨ **Enhanced Features**:
+  - Checksum verification and generation
+  - Automatic backup before extraction
+  - Archive splitting support
+  - Improved batch processing
+  - Better error handling and diagnostics
+  - Optimized performance with parallel tools (pigz, pbzip2)
+- 📊 **Better Output**: Compression ratios, file sizes, detailed statistics
+- 🎯 **Improved Smart Detection**: Better content analysis for format selection
+- 📝 **Complete Rewrite**: Cleaner code, better naming conventions, comprehensive comments

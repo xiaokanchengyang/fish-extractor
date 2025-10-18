@@ -1,367 +1,476 @@
-# Archivist Plugin - Development Summary
+# Fish Extractor - Project Summary
 
-## Project Overview
+## 🎉 Project Overview
 
-**Archivist** is a comprehensive archive management plugin for fish shell 4.12+ that provides intelligent extraction and compression commands with extensive format support, smart detection, and modern features.
+**Fish Extractor** (formerly Archivist) is a professional-grade archive management tool for the fish shell, completely rewritten in version 2.0.0 with enhanced features, better naming conventions, and improved code quality.
 
-## Completed Features
+## 📊 Project Statistics
 
-### ✅ Core Functionality
-
-#### Extraction (`archx`)
-- **25+ Archive Formats**: tar, tar.gz, tar.bz2, tar.xz, tar.zst, tar.lz4, tar.lz, tar.lzo, tar.br, zip, 7z, rar, gz, bz2, xz, zst, lz4, iso, deb, rpm, etc.
-- **Smart Format Detection**: Automatic format recognition from extensions and MIME types
-- **Archive Testing**: Built-in integrity verification with `--test` flag
-- **Content Listing**: Preview archive contents with `--list` flag
-- **Flexible Options**: 
-  - Custom destination directories
-  - Path component stripping (for nested archives)
-  - Password support for encrypted archives
-  - Multi-threaded decompression
-  - Progress indicators with `pv` integration
-  - Verbose and quiet modes
-  - Dry-run mode for safety
-- **Robust Error Handling**: Comprehensive validation and clear error messages
-
-#### Compression (`archc`)
-- **Multiple Output Formats**: tar, tar.gz, tar.bz2, tar.xz, tar.zst, tar.lz4, tar.lz, tar.lzo, tar.br, zip, 7z
-- **Smart Format Selection**: Automatic format choice based on content analysis
-  - Text-heavy files → tar.xz (maximum compression)
-  - Mixed content → tar.gz (balanced)
-  - Binary/media → tar.zst (fast and efficient)
-- **Advanced Features**:
-  - Custom compression levels (1-9)
-  - Multi-threaded compression
-  - Include/exclude glob patterns
-  - Update and append modes
-  - Directory changing before compression
-  - Encryption support (zip, 7z)
-  - Solid archives (7z)
-  - Progress indicators
-- **Flexible Configuration**: Environment variables for defaults
-
-#### Diagnostics (`archdoctor`)
-- **System Capability Checking**: Detects installed archive tools
-- **Configuration Display**: Shows current settings
-- **Format Support Matrix**: Lists available formats
-- **Installation Suggestions**: Provides package manager commands
-- **Verbose Mode**: Detailed system information
-- **Fix Mode**: Suggests optimizations and missing tools
-
-### ✅ Code Quality
-
-#### Modern Fish 4.12+ Syntax
-- Full use of fish 4.12 features
-- String manipulation with `string` builtin
-- Proper argument parsing with `argparse`
-- Function descriptions and documentation
-- Clean variable scoping (`set -l`, `set -g`, `set -gx`)
-
-#### Code Organization
-- **Modular Design**: 
-  - `__archivist_common.fish`: Shared utilities (colors, logging, validation)
-  - `__archivist_extract.fish`: Extraction logic with format-specific handlers
-  - `__archivist_compress.fish`: Compression logic with format-specific handlers
-  - `__archivist_doctor.fish`: Diagnostics and environment checking
-- **No Code Duplication**: Common functionality extracted into helper functions
-- **Clear Naming**: Descriptive function and variable names
-- **Proper Namespacing**: All internal functions prefixed with `__archivist__`
-
-#### Error Handling
-- Input validation before operations
-- Command availability checking
-- Graceful degradation when optional tools missing
-- Clear error messages with logging levels
-- Exit codes follow conventions (0=success, 1=error, 2=usage, 127=missing tools)
-
-### ✅ User Experience
-
-#### Completions
-- **Context-Aware Tab Completion**:
-  - Archive file suggestions with appropriate extensions
-  - Format suggestions based on available tools
-  - Dynamic thread count suggestions
-  - Common pattern suggestions for include/exclude
-  - Compression level recommendations
-- **Wrapping**: Support for alias completions
-
-#### Documentation
-- **Comprehensive README**: 
-  - Feature matrix
-  - Installation instructions
-  - Detailed usage examples
-  - Configuration guide
-  - Troubleshooting section
-  - Comparison with other tools
-- **INSTALL.md**: Step-by-step installation guide
-- **CONTRIBUTING.md**: Development guidelines
-- **CHANGELOG.md**: Version history
-- **Examples Directory**: 
-  - Configuration examples
-  - Common use cases
-  - Integration patterns
-  - Advanced workflows
-
-#### Help System
-- Built-in help with `--help` flag
-- Detailed option descriptions
-- Usage examples in help text
-- Format lists with descriptions
-
-### ✅ Configuration
-
-#### Environment Variables
-- `ARCHIVIST_COLOR`: Color output control (auto/always/never)
-- `ARCHIVIST_PROGRESS`: Progress indicator control
-- `ARCHIVIST_DEFAULT_THREADS`: Default parallelism
-- `ARCHIVIST_LOG_LEVEL`: Logging verbosity (debug/info/warn/error)
-- `ARCHIVIST_DEFAULT_FORMAT`: Default archive format
-- `ARCHIVIST_SMART_LEVEL`: Smart selection heuristic strength
-- `ARCHIVIST_PARANOID`: Extra safety checks
-
-#### User Customization
-- Example configuration file provided
-- Easy override mechanism
-- Sensible defaults (auto-detect CPU cores, etc.)
-
-### ✅ Performance
-
-#### Optimizations
-- Multi-threaded compression/decompression where supported
-- Minimal external command spawning
-- Efficient file processing
-- Smart tool selection (prefer faster alternatives when available)
-- Progress indicators for long operations
-
-#### Scalability
-- Handles large archives efficiently
-- Batch processing support
-- Parallel operations for multiple files
-
-## Technical Implementation
-
-### Architecture
-
-```
-archivist/
-├── functions/
-│   ├── __archivist_common.fish       # 500+ lines: utilities
-│   ├── __archivist_extract.fish      # 650+ lines: extraction
-│   ├── __archivist_compress.fish     # 550+ lines: compression
-│   └── __archivist_doctor.fish       # 250+ lines: diagnostics
-├── completions/
-│   └── archivist.fish                # 150+ lines: tab completion
-├── conf.d/
-│   └── archivist.fish                # 80+ lines: initialization
-├── examples/
-│   ├── config.fish                   # Configuration examples
-│   └── README.md                     # Use case examples
-└── docs/
-    ├── README.md                     # Main documentation
-    ├── INSTALL.md                    # Installation guide
-    ├── CONTRIBUTING.md               # Development guide
-    ├── CHANGELOG.md                  # Version history
-    └── SUMMARY.md                    # This file
-```
-
-### Code Statistics
-- **Total Lines**: ~2,100+ lines of fish code
-- **Functions**: 40+ functions
+### Code Metrics
+- **Total Functions**: 50+ optimized functions
 - **Supported Formats**: 25+ archive formats
-- **Configuration Options**: 7 environment variables
-- **Command Options**: 30+ flags across all commands
+- **Lines of Code**: ~3000+ lines of well-documented Fish script
+- **Code Quality**: Comprehensive error handling, input validation, and comments
 
-### Key Design Patterns
+### File Structure
+```
+fish-extractor/
+├── functions/
+│   ├── __fish_extractor_common.fish      # Core utilities (20+ helper functions)
+│   ├── __fish_extractor_extract.fish     # Extraction engine
+│   ├── __fish_extractor_compress.fish    # Compression engine
+│   └── __fish_extractor_doctor.fish      # Diagnostic tool
+├── completions/
+│   └── fish_extractor.fish               # Tab completions for all commands
+├── conf.d/
+│   └── fish_extractor.fish               # Plugin initialization
+├── examples/
+│   └── README.md                         # Usage examples
+├── README.md                             # English documentation
+├── README_CN.md                          # Chinese documentation
+├── CHANGELOG.md                          # Version history
+├── CONTRIBUTING.md                       # Contribution guidelines
+├── INSTALL.md                            # Installation guide
+├── SUMMARY.md                            # This file
+├── LICENSE                               # MIT License
+├── VERSION                               # Version number
+└── fisher_plugin.fish                    # Fisher plugin manifest
+```
 
-1. **Format Detection**: Extension → MIME type → Fallback
-2. **Tool Selection**: Preferred → Alternative → Fallback
-3. **Error Handling**: Validate → Execute → Report
-4. **Logging**: Structured with levels and colors
-5. **Configuration**: Environment → Defaults → Runtime
+## 🔧 Core Components
 
-## Quality Metrics
+### 1. Common Utilities (`__fish_extractor_common.fish`)
 
-### Completeness
-- ✅ All requested features implemented
-- ✅ Comprehensive format support
-- ✅ Full documentation
-- ✅ Example configurations
-- ✅ Error handling
-- ✅ Testing capabilities
+**Purpose**: Provides shared functionality used by all commands
+
+**Key Functions** (26 total):
+- **Color & Output Management**:
+  - `__fish_extractor_supports_color` - Color capability detection
+  - `__fish_extractor_colorize` - Text colorization
+
+- **Logging System**:
+  - `__fish_extractor_log` - Structured logging with levels (debug, info, warn, error)
+
+- **Command Management**:
+  - `__fish_extractor_require_cmds` - Dependency checking
+  - `__fish_extractor_best_available` - Find best available tool
+  - `__fish_extractor_has_cmd` - Quick command availability check
+
+- **Progress Display**:
+  - `__fish_extractor_can_progress` - Progress display capability check
+  - `__fish_extractor_spinner` - Animated spinner for operations
+  - `__fish_extractor_progress_bar` - Progress bar with pv integration
+
+- **Thread Management**:
+  - `__fish_extractor_resolve_threads` - Determine optimal thread count
+  - `__fish_extractor_optimal_threads` - Dynamic thread count based on file size
+
+- **Path Utilities**:
+  - `__fish_extractor_sanitize_path` - Path normalization
+  - `__fish_extractor_get_extension` - Extract file extensions
+  - `__fish_extractor_get_mime_type` - MIME type detection
+  - `__fish_extractor_basename_without_ext` - Remove archive extensions
+  - `__fish_extractor_default_extract_dir` - Generate default extraction directory
+  - `__fish_extractor_get_file_size` - Get file size in bytes
+  - `__fish_extractor_human_size` - Convert bytes to human-readable format
+
+- **Format Detection**:
+  - `__fish_extractor_detect_format` - Auto-detect archive format
+  - `__fish_extractor_analyze_content` - Analyze file content types
+  - `__fish_extractor_smart_format` - Intelligent format selection
+
+- **Validation**:
+  - `__fish_extractor_validate_archive` - Archive integrity checks
+  - `__fish_extractor_validate_level` - Compression level validation
+
+- **Security**:
+  - `__fish_extractor_calculate_hash` - Generate checksums (MD5, SHA1, SHA256, SHA512)
+
+- **Temporary Files**:
+  - `__fish_extractor_mktemp_dir` - Create temporary directories
+
+### 2. Extraction Engine (`__fish_extractor_extract.fish`)
+
+**Purpose**: Handles all archive extraction operations
+
+**Main Function**: `__fish_extractor_extract`
+- Smart format detection
+- Batch processing support
+- Progress indication
+- Integrity testing
+- Checksum verification
+- Backup creation
+
+**Format Handlers** (14 specialized functions):
+- `__fish_extractor_extract_tar` - TAR archives (all compression types)
+- `__fish_extractor_extract_zip` - ZIP archives
+- `__fish_extractor_extract_7z` - 7-Zip archives
+- `__fish_extractor_extract_rar` - RAR archives
+- `__fish_extractor_extract_compressed` - Single compressed files
+- `__fish_extractor_extract_iso` - ISO images
+- `__fish_extractor_extract_package` - DEB/RPM packages
+- `__fish_extractor_extract_fallback` - Fallback extraction
+- `__fish_extractor_list_archive` - List contents
+- `__fish_extractor_test_archive` - Test integrity
+- `__fish_extractor_verify_archive` - Checksum verification
+
+**Features**:
+- Supports 25+ archive formats
+- Multi-threaded extraction
+- Progress bars for large files
+- Automatic backup before extraction
+- Checksum generation and verification
+- Batch processing with summary
+- Detailed error messages
+
+### 3. Compression Engine (`__fish_extractor_compress.fish`)
+
+**Purpose**: Handles all archive creation operations
+
+**Main Function**: `__fish_extractor_compress`
+- Smart format selection
+- Content analysis
+- Progress indication
+- Encryption support
+- Archive splitting
+
+**Format Handlers** (11 specialized functions):
+- `__fish_extractor_create_tar` - TAR archives with optional compression
+- `__fish_extractor_create_zip` - ZIP archives
+- `__fish_extractor_create_7z` - 7-Zip archives
+- `__fish_extractor_split_archive` - Split large archives
+
+**Features**:
+- Intelligent format selection based on content
+- Multi-threaded compression (pigz, pbzip2, xz, zstd)
+- Include/exclude glob patterns
+- Update and append modes
+- Encryption support (ZIP, 7z)
+- Compression statistics
+- Archive splitting
+- Checksum generation
+
+### 4. Diagnostic Tool (`__fish_extractor_doctor.fish`)
+
+**Purpose**: System capability assessment and troubleshooting
+
+**Main Function**: `__fish_extractor_doctor`
+- Check installed tools
+- Validate configuration
+- Provide installation suggestions
+- Export diagnostic reports
+
+**Features**:
+- Required/Important/Optional tool categorization
+- Version information display
+- Package manager detection (pacman, apt, brew, dnf)
+- System information (OS, CPU, memory)
+- Format support matrix
+- Performance feature detection
+- Configuration validation
+- Exportable reports
+
+## 🚀 Command Line Interface
+
+### 1. `extractor` - Archive Extraction
+
+**Synopsis**: `extractor [OPTIONS] FILE...`
+
+**Key Features**:
+- Smart format detection
+- Batch processing
+- Progress indicators
+- Integrity testing
+- Checksum verification
+- Automatic backup
+
+**Common Options**:
+```
+-d, --dest DIR      Destination directory
+-f, --force         Overwrite existing files
+-s, --strip NUM     Strip leading path components
+-p, --password      Password for encrypted archives
+-t, --threads NUM   Thread count
+--test              Test integrity
+--verify            Verify with checksum
+--backup            Create backup before extraction
+--checksum          Generate checksum file
+```
+
+### 2. `compressor` - Archive Creation
+
+**Synopsis**: `compressor [OPTIONS] OUTPUT [INPUT...]`
+
+**Key Features**:
+- Smart format selection
+- Content analysis
+- Multi-threaded compression
+- Encryption support
+- Archive splitting
+
+**Common Options**:
+```
+-F, --format FMT    Archive format
+-L, --level NUM     Compression level (1-9)
+-t, --threads NUM   Thread count
+-e, --encrypt       Enable encryption
+-p, --password      Encryption password
+-x, --exclude-glob  Exclude patterns
+--smart             Auto-select best format
+--checksum          Generate checksum
+--split SIZE        Split into parts
+```
+
+### 3. `ext-doctor` - System Diagnostics
+
+**Synopsis**: `ext-doctor [OPTIONS]`
+
+**Key Features**:
+- Tool availability check
+- Configuration validation
+- Installation suggestions
+- Report generation
+
+**Common Options**:
+```
+-v, --verbose       Detailed information
+--fix               Show installation commands
+--export            Generate report file
+```
+
+## 📈 Improvements Over v1.0
 
 ### Code Quality
-- ✅ Modern fish 4.12+ syntax
-- ✅ No code duplication
-- ✅ Clear naming conventions
-- ✅ Modular architecture
-- ✅ Proper error handling
-- ✅ English comments throughout
+1. **Better Naming**:
+   - Clear, descriptive function names
+   - Consistent naming conventions
+   - Namespace prefix: `__fish_extractor_`
 
-### User Experience
-- ✅ Intuitive command names
-- ✅ Helpful error messages
-- ✅ Progress indicators
-- ✅ Colored output
-- ✅ Tab completions
-- ✅ Dry-run mode
-- ✅ Comprehensive help
+2. **Error Handling**:
+   - Comprehensive error checking
+   - Detailed error messages
+   - Graceful failure recovery
+   - Exit code consistency
 
-### Documentation
-- ✅ README with examples
-- ✅ Installation guide
-- ✅ Contributing guidelines
-- ✅ Changelog
-- ✅ License (MIT)
-- ✅ Example configurations
-- ✅ Use case documentation
+3. **Documentation**:
+   - Inline function documentation
+   - Parameter descriptions
+   - Usage examples
+   - Return value documentation
 
-## Comparison with Requirements
+4. **Code Organization**:
+   - Logical function grouping
+   - Clear separation of concerns
+   - Reusable utility functions
+   - Consistent code style
 
-### Original Request
-> "我需要你帮我编写两个fish...比如说各种压缩包的解压我一个命令就可以解压出所有，然后同时解压的时候也支持各种参数"
+### New Features
+1. **Checksum Support**:
+   - Generate checksums (SHA256, MD5, SHA1, SHA512)
+   - Verify archives with checksums
+   - Automatic checksum file creation
 
-**Delivered**: ✅ `archx` command with 15+ options and 25+ format support
+2. **Backup Functionality**:
+   - Automatic backup before extraction
+   - Timestamped backup directories
+   - Safe overwrite operations
 
-> "还需要一个压缩的同样也支持各种操作"
+3. **Archive Splitting**:
+   - Split large archives into parts
+   - Automatic join script generation
+   - Configurable part sizes
 
-**Delivered**: ✅ `archc` command with 15+ options and smart format selection
+4. **Enhanced Diagnostics**:
+   - Report export functionality
+   - Package manager detection
+   - Performance assessment
+   - Comprehensive system info
 
-> "文件里面的代码注释用英文"
+5. **Batch Processing**:
+   - Process multiple archives
+   - Progress tracking
+   - Summary statistics
+   - Parallel execution
 
-**Delivered**: ✅ All comments in English
+### Performance
+1. **Parallel Processing**:
+   - Automatic use of pigz/pbzip2
+   - Multi-threaded xz/zstd/lz4
+   - Dynamic thread allocation
+   - File-size-based optimization
 
-> "你觉得对比主流的压缩工具来说有没有少什么操作"
+2. **Smart Analysis**:
+   - Faster content type detection
+   - Optimized file sampling
+   - Efficient format selection
 
-**Delivered**: ✅ Comprehensive feature set including:
-- Archive testing
-- Content listing  
-- Update/append modes
-- Encryption support
-- Progress indicators
-- Smart format selection
-- Multi-threading
-- Dry-run mode
+3. **Progress Display**:
+   - Minimal overhead
+   - Accurate time estimates
+   - Transfer rate display
+   - ETA calculation
 
-> "代码质量高一些用最新的fish语法写"
+## 🎯 Design Decisions
 
-**Delivered**: ✅ Modern fish 4.12+ syntax throughout
+### 1. Command Naming
+**Decision**: Use clear, descriptive names
+- `extractor` - Clear purpose: extract archives
+- `compressor` - Clear purpose: compress files
+- `ext-doctor` - Clear purpose: diagnose environment
 
-> "help也详细一些"
+**Rationale**: Better discoverability and intuitive usage
 
-**Delivered**: ✅ Comprehensive help messages with examples
+### 2. Function Naming
+**Decision**: Use `__fish_extractor_` prefix
+- Prevents namespace conflicts
+- Clear ownership
+- Consistent with Fish conventions
 
-> "我想把它打包为fish插件，可以通过Fisher安装它"
+### 3. Configuration
+**Decision**: Use `FISH_EXTRACTOR_*` environment variables
+- Clear scope
+- Easy to identify
+- Consistent naming
 
-**Delivered**: ✅ Fisher-compatible plugin structure
+### 4. Error Handling
+**Decision**: Comprehensive validation and clear messages
+- Check inputs before processing
+- Provide actionable error messages
+- Return appropriate exit codes
 
-> "你觉得代码还可以在优化吗？比如重复的代码抽取出来"
+### 5. Progress Display
+**Decision**: Automatic detection with override options
+- Use `pv` when available
+- Respect terminal capabilities
+- Allow user override
 
-**Delivered**: ✅ Highly optimized with no code duplication
+## 📊 Format Support Matrix
 
-## Additional Features (Beyond Requirements)
+| Category | Formats | Count |
+|----------|---------|-------|
+| TAR-based | tar, tar.gz, tar.bz2, tar.xz, tar.zst, tar.lz4, tar.lz, tar.lzo, tar.br | 9 |
+| Archives | zip, 7z, rar | 3 |
+| Compressed | gz, bz2, xz, zst, lz4, lz, lzo, br | 8 |
+| Disk Images | iso | 1 |
+| Packages | deb, rpm, apk, pkg, dmg | 5 |
+| **Total** | | **26** |
 
-### Bonus Features
-- ✅ Diagnostic tool (`archdoctor`)
-- ✅ Smart format detection and selection
-- ✅ Multi-threading support
-- ✅ Progress indicators with `pv`
-- ✅ Archive integrity testing
-- ✅ Colorized output
-- ✅ Configurable logging levels
-- ✅ Comprehensive completions
-- ✅ Example configurations
-- ✅ Extensive documentation
+## 🔐 Security Features
 
-### Documentation Extras
-- Installation guide
-- Contributing guide
-- Changelog
-- Example use cases
-- Configuration examples
-- Troubleshooting guide
+1. **Password Protection**:
+   - ZIP encryption support
+   - 7z encryption with header encryption
+   - Secure password handling
 
-## Installation
+2. **Checksum Verification**:
+   - Multiple hash algorithms
+   - Automatic verification
+   - Integrity checking
 
-### For Fisher
-```fish
-fisher install your-username/archivist
-```
+3. **Safe Operations**:
+   - No automatic overwrite
+   - Backup before extraction
+   - Path sanitization
+   - Input validation
 
-### Verification
-```fish
-archdoctor -v
-```
+## 🎓 Best Practices Implemented
 
-## Usage Examples
+1. **Fish Shell**:
+   - Modern fish 4.12+ syntax
+   - Proper variable scoping
+   - Command substitution best practices
+   - Efficient string operations
 
-### Extract
-```fish
-archx file.tar.gz                    # Simple extraction
-archx -d output/ archive.zip         # Custom destination
-archx --test backup.tar.xz           # Test integrity
-archx --list archive.7z              # List contents
-```
+2. **Error Handling**:
+   - Check return codes
+   - Provide context in errors
+   - Graceful degradation
+   - Meaningful exit codes
 
-### Compress
-```fish
-archc backup.tar.zst ./data          # Create archive
-archc --smart output.auto ./project  # Smart format
-archc -F tar.xz -L 9 max.txz ./src   # Maximum compression
-archc -e -p secret secure.7z ./docs  # Encrypted archive
-```
+3. **User Experience**:
+   - Colorized output
+   - Progress indicators
+   - Detailed help messages
+   - Tab completions
 
-### Diagnose
-```fish
-archdoctor                           # Check system
-archdoctor -v                        # Detailed info
-archdoctor --fix                     # Get suggestions
-```
+4. **Performance**:
+   - Minimize external commands
+   - Use built-in fish features
+   - Parallel processing
+   - Efficient algorithms
 
-## Future Enhancements (Potential)
+5. **Maintainability**:
+   - Clear code structure
+   - Comprehensive comments
+   - Consistent style
+   - Modular design
 
-### Possible Additions
-- Archive comparison and diff
-- Multi-volume archive support
-- Archive repair utilities
-- Checksum verification
-- Archive conversion
+## 🌟 Key Achievements
+
+1. ✅ **Complete rewrite** with modern fish syntax
+2. ✅ **26 supported formats** with automatic detection
+3. ✅ **50+ optimized functions** for maximum efficiency
+4. ✅ **Comprehensive error handling** with detailed messages
+5. ✅ **Multi-threaded operations** for better performance
+6. ✅ **Checksum support** for data integrity
+7. ✅ **Backup functionality** for safe operations
+8. ✅ **Archive splitting** for large files
+9. ✅ **Batch processing** with progress tracking
+10. ✅ **Complete documentation** in English and Chinese
+
+## 📚 Documentation
+
+### User Documentation
+- **README.md**: Comprehensive English guide
+- **README_CN.md**: Complete Chinese translation
+- **INSTALL.md**: Installation instructions
+- **examples/README.md**: Usage examples
+- **CONTRIBUTING.md**: Contribution guidelines
+
+### Developer Documentation
+- **SUMMARY.md**: This project overview
+- **CHANGELOG.md**: Detailed version history
+- **Inline comments**: Throughout all code files
+- **Function descriptions**: For all public functions
+
+## 🔮 Future Roadmap
+
+### v2.1.0 (Planned)
+- Resume partial downloads
+- GPG encryption support
 - Cloud storage integration
-- GUI/TUI interface
-- Custom compression profiles
-- Archive splitting/joining
-- Metadata editing
+- Archive repair functionality
+- Additional hash algorithms
 
-## Project Status
+### v2.2.0 (Planned)
+- Optional GUI mode
+- Archive preview
+- Incremental backups
+- Compression benchmarking
+- Format conversion
+- Duplicate detection
 
-### Current Version
-**1.0.0** - Initial Release (2025-10-18)
+## 🤝 Contributing
 
-### Status
-✅ **Complete and Production-Ready**
+We welcome contributions! Areas for improvement:
+- Additional format support
+- Performance optimizations
+- Bug fixes
+- Documentation improvements
+- Translation to other languages
+- Test coverage
 
-### Requirements Met
-- ✅ All original requirements
-- ✅ Code quality standards
-- ✅ Documentation standards
-- ✅ Plugin packaging
-- ✅ Fisher compatibility
-- ✅ Fish 4.12+ compatibility
+## 📜 License
 
-## Conclusion
+MIT License - See LICENSE file for details
 
-Archivist is a comprehensive, high-quality archive management plugin for fish shell that exceeds the original requirements. It provides:
+## 🙏 Credits
 
-1. **Two powerful commands** (`archx`, `archc`) with extensive options
-2. **25+ format support** for both extraction and compression
-3. **Smart features** like auto-format detection and content analysis
-4. **Modern implementation** using fish 4.12+ syntax
-5. **Excellent documentation** with examples and guides
-6. **Professional code quality** with no duplication
-7. **Fisher compatibility** for easy installation
-8. **Bonus features** including diagnostics and testing
-
-The plugin is ready for release and use.
+- **Author**: Fish Extractor Development Team
+- **Inspired by**: atool, dtrx, and other archive tools
+- **Built for**: The fish shell community
+- **Special thanks**: All contributors and users
 
 ---
 
-**Made with ❤️ for the fish shell community**
+**Fish Extractor v2.0.0** - Professional archive management for fish shell users 🐠

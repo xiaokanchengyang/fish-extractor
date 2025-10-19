@@ -372,7 +372,7 @@ function test_format_integrity --description 'Test format integrity'
             set -l cmd (get_decompression_command $format)
             if test "$cmd" != "unknown"
                 require_commands $cmd; or return 127
-                eval $cmd -t "$archive" 2>&1
+                $cmd -t "$archive" 2>&1
             else
                 return 1
             end

@@ -1,10 +1,10 @@
-# Fish Extractor (鱼壳解压器) - Fish Shell 档案管理工具
+# Fish Pack - Fish Shell 档案管理工具
 
-[![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
+[![Fish Shell](https://img.shields.io/badge/fish-4.1.2%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-extractor)
+[![Version](https://img.shields.io/badge/version-4.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-pack)
 
-**Fish Extractor** 是为 [fish shell](https://fishshell.com/) 打造的专业级档案管理工具。它提供强大、直观的命令来解压和压缩档案，支持智能格式检测、并行处理以及全面的选项配置。
+**Fish Pack** 是为 [fish shell](https://fishshell.com/) 打造的安全、专业级档案管理工具。它提供强大、直观的命令来打包和解包档案，支持智能格式检测、并行处理、增强的安全功能以及全面的选项配置。
 
 [English](README.md) | 简体中文
 

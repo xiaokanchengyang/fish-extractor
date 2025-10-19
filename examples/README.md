@@ -1,6 +1,6 @@
-# Fish Archive Manager Examples
+# Fish Pack Examples
 
-This directory contains practical examples and usage patterns for Fish Archive Manager.
+This directory contains practical examples and usage patterns for Fish Pack.
 
 ## Files
 

@@ -3,6 +3,8 @@
 
 # Load core utilities
 source (dirname (status --current-filename))/../core_optimized.fish
+# Load safe execution helpers
+source (dirname (status --current-filename))/safe_exec.fish
 
 # ============================================================================
 # Enhanced Archive Operation Helpers
@@ -33,13 +35,9 @@ function __fish_archive_execute_with_progress --description 'Execute command wit
     # Execute with progress if enabled
     if test $progress -eq 1; and __fish_archive_can_show_progress
         set -l size (__fish_archive_get_file_size "$target")
-        if test $size -gt 10485760  # 10MB
-            eval $full_command | __fish_archive_show_progress_bar $size
-        else
-            eval $full_command
-        end
+        __fish_pack_exec_with_progress $full_command $size
     else
-        eval $full_command
+        __fish_pack_safe_exec $full_command
     end
     
     set -l exit_code $status
@@ -236,8 +234,9 @@ function __fish_archive_collect_and_filter_files --description 'Collect and filt
                 set -a file_list "$file"
             end
         else
-            # Try glob expansion
-            for file in (eval echo "$input" 2>/dev/null)
+            # Try glob expansion safely
+            set -l expanded (string match -r '.*' -- $input)
+            for file in $expanded
                 test -f "$file"; and set -a file_list "$file"
             end
         end

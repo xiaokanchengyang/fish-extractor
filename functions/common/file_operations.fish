@@ -30,8 +30,8 @@ function collect_input_files --description 'Collect and validate input files for
         if test -e "$input"
             set -a file_list "$input"
         else
-            # Try glob expansion
-            set -l expanded (eval echo "$input" 2>/dev/null)
+            # Try glob expansion safely
+            set -l expanded (string match -r '.*' -- $input)
             for item in $expanded
                 test -e "$item"; and set -a file_list "$item"
             end

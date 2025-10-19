@@ -2,17 +2,17 @@
 
 ## Supported Versions
 
-We currently support the following versions of Fish Archive Manager with security updates:
+We currently support the following versions of Fish Pack with security updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 3.0.x   | :white_check_mark: |
-| 2.x.x   | :x:                |
-| 1.x.x   | :x:                |
+| 4.0.x   | :white_check_mark: |
+| 3.0.x   | :x:                |
+| < 3.0   | :x:                |
 
 ## Reporting a Vulnerability
 
-We take security vulnerabilities seriously. If you discover a security vulnerability in Fish Archive Manager, please report it responsibly.
+We take security vulnerabilities seriously. If you discover a security vulnerability in Fish Pack, please report it responsibly.
 
 ### How to Report
 
@@ -34,7 +34,7 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 
 ## Security Features
 
-Fish Archive Manager includes several security features:
+Fish Pack includes comprehensive security features:
 
 ### Input Validation
 - All file paths are sanitized to prevent directory traversal attacks
@@ -47,14 +47,16 @@ Fish Archive Manager includes several security features:
 - Command arguments are validated before execution
 
 ### Temporary File Security
-- Temporary files are created with secure permissions (600)
-- Temporary files are automatically cleaned up
-- Random filenames prevent predictable paths
+- **mktemp usage**: All temp files/dirs created with mktemp
+- **Restricted permissions**: Files (600), directories (700)
+- **Automatic cleanup**: Cleanup on success, error, or interrupt
+- **No fallback to predictable names**: Fails safely if mktemp unavailable
 
 ### Password Handling
-- Passwords are not logged or stored in command history
-- Interactive password prompts when possible
-- Environment variable support for scripts
+- **Secure input**: Passwords never appear in command lines or process lists
+- **Interactive prompts**: Uses `read -s` for silent password input
+- **Temporary files**: Password files created with 600 permissions and immediate cleanup
+- **No eval usage**: Commands built safely without shell interpretation
 
 ### Archive Security
 - Path traversal protection in archive extraction
@@ -91,8 +93,8 @@ Fish Archive Manager includes several security features:
    # Good: Interactive prompt (not stored in history)
    compress -e secure.zip ./files
    
-   # Avoid: Password in command line
-   compress -e -p "password123" secure.zip ./files
+   # Now safe: Password handled securely internally
+   compress -e secure.zip ./files  # Prompts for password
    ```
 
 ### For Developers
@@ -128,7 +130,7 @@ Fish Archive Manager includes several security features:
 
 Security updates are released as patch versions (e.g., 3.0.1). We recommend:
 
-1. **Stay Updated**: Keep Fish Archive Manager updated to the latest version
+1. **Stay Updated**: Keep Fish Pack updated to the latest version
 2. **Monitor Releases**: Watch for security advisories in release notes
 3. **Test Updates**: Test updates in a safe environment before production use
 
@@ -146,14 +148,14 @@ We regularly audit our code for security issues:
 For security-related questions or concerns:
 
 - **Security Issues**: [security@example.com](mailto:security@example.com)
-- **General Questions**: [GitHub Issues](https://github.com/xiaokanchengyang/fish-extractor/issues)
+- **General Questions**: [GitHub Issues](https://github.com/xiaokanchengyang/fish-pack/issues)
 - **Documentation**: [Security Documentation](docs/SECURITY.md)
 
 ## Acknowledgments
 
-We thank the security researchers and community members who have helped improve the security of Fish Archive Manager through responsible disclosure.
+We thank the security researchers and community members who have helped improve the security of Fish Pack through responsible disclosure.
 
 ---
 
-**Last Updated**: December 2024
-**Version**: 3.0.0
+**Last Updated**: October 2025
+**Version**: 4.0.0

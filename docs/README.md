@@ -1,6 +1,6 @@
-# Fish Archive Manager - Documentation
+# Fish Pack - Documentation
 
-This directory contains comprehensive documentation for Fish Archive Manager.
+This directory contains comprehensive documentation for Fish Pack.
 
 ## 📚 Documentation Index
 

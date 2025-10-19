@@ -3,6 +3,12 @@
 
 # Load optimized common functions
 source (dirname (status --current-filename))/common/optimized_common.fish
+# Load secure execution functions
+source (dirname (status --current-filename))/common/safe_exec.fish
+# Load secure archive operations
+source (dirname (status --current-filename))/common/secure_archive_ops.fish
+# Load performance utilities
+source (dirname (status --current-filename))/common/performance_utils.fish
 
 # ============================================================================
 # Main Archive Management Functions
@@ -261,6 +267,12 @@ Examples:
             end
         end
         
+        # Verify archive safety before extraction
+        if not __fish_pack_verify_archive_members "$archive" "$format"
+            __fish_archive_log error "Archive contains unsafe paths. Extraction aborted."
+            continue
+        end
+        
         # Prepare extraction arguments
         set -l extract_args (__fish_archive_prepare_extraction_args "$format" $threads "$password" $strip $flat $preserve_perms "$archive" "$dest")
         if test $status -ne 0
@@ -283,31 +295,18 @@ Examples:
             end
             
             # Execute with progress and measure
-            set -l start_ts (date +%s)
-            set -l cpu_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
-            set -l idle_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
+            set -l start_data (__fish_pack_start_measurement)
 
             if test $progress_enabled -eq 1
-                eval (string join ' ' $extract_args) | __fish_archive_show_progress_bar $file_size
+                __fish_pack_exec_with_progress $extract_args $file_size
             else
-                eval (string join ' ' $extract_args)
+                __fish_pack_safe_exec $extract_args
             end
 
             set -l cmd_status $status
-            set -l end_ts (date +%s)
-            set -l cpu_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
-            set -l idle_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
-            set -l duration (math "$end_ts - $start_ts")
-
-            set -l cpu_pct ""
-            if test -n "$cpu_start"; and test -n "$cpu_end"
-                set -l cpu_delta (math "$cpu_end - $cpu_start")
-                set -l idle_delta (math "$idle_end - $idle_start")
-                if test $cpu_delta -gt 0
-                    set -l busy (math "$cpu_delta - $idle_delta")
-                    set cpu_pct (math -s1 "$busy * 100 / $cpu_delta")
-                end
-            end
+            set -l perf_data (__fish_pack_end_measurement "$start_data")
+            set -l duration (echo $perf_data | cut -d' ' -f1)
+            set -l cpu_pct (echo $perf_data | cut -d' ' -f2)
 
             if test $cmd_status -eq 0
                 __fish_archive_log info "Successfully extracted: $archive"
@@ -610,32 +609,19 @@ Examples:
     
     __fish_archive_log info "Compressing to: $output"
     
-    # Execute with progress and measure duration/CPU usage
-    set -l start_ts (date +%s)
-    set -l cpu_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
-    set -l idle_start (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
+    # Execute with progress and measure
+    set -l start_data (__fish_pack_start_measurement)
 
     if test $enable_progress -eq 1; and test $total_size -gt 10485760
-        eval (string join ' ' $compress_args) | __fish_archive_show_progress_bar $total_size
+        __fish_pack_exec_with_progress $compress_args $total_size
     else
-        eval (string join ' ' $compress_args)
+        __fish_pack_safe_exec $compress_args
     end
     set -l cmd_status $status
 
-    set -l end_ts (date +%s)
-    set -l cpu_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $2+$3+$4+$5+$6+$7+$8}')
-    set -l idle_end (cat /proc/stat 2>/dev/null | head -n1 | awk '{print $5}')
-    set -l duration (math "$end_ts - $start_ts")
-
-    set -l cpu_pct ""
-    if test -n "$cpu_start"; and test -n "$cpu_end"
-        set -l cpu_delta (math "$cpu_end - $cpu_start")
-        set -l idle_delta (math "$idle_end - $idle_start")
-        if test $cpu_delta -gt 0
-            set -l busy (math "$cpu_delta - $idle_delta")
-            set cpu_pct (math -s1 "$busy * 100 / $cpu_delta")
-        end
-    end
+    set -l perf_data (__fish_pack_end_measurement "$start_data")
+    set -l duration (echo $perf_data | cut -d' ' -f1)
+    set -l cpu_pct (echo $perf_data | cut -d' ' -f2)
 
     if test $cmd_status -eq 0
         __fish_archive_log info "Successfully compressed to: $output"

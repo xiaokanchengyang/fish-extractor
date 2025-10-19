@@ -1,10 +1,16 @@
 #!/usr/bin/env fish
-# Fish Archive Manager Installation Script
-# This script installs the Fish Archive Manager plugin
+# Fish Pack Installation Script
+# This script installs the Fish Pack archive manager
+
+# Enable strict error handling
+function on_error --on-event fish_error
+    echo "Error occurred during installation" >&2
+    exit 1
+end
 
 set -l script_dir (dirname (status --current-filename))
-set -l plugin_name "fish-extractor"
-set -l version "3.0.0"
+set -l plugin_name "fish-pack"
+set -l version "4.0.0"
 
 function show_help
     echo "Fish Archive Manager Installation Script"
@@ -28,13 +34,13 @@ function show_help
 end
 
 function show_version
-    echo "Fish Archive Manager v$version"
-    echo "Professional archive management tool for fish shell"
+    echo "Fish Pack v$version"
+    echo "Professional archive management tool for fish shell with enhanced security"
 end
 
 function check_fish_version
     set -l fish_version (fish --version | string replace -r '.*?([0-9]+\.[0-9]+).*' '$1')
-    set -l required_version "4.12"
+    set -l required_version "4.1"
     
     if test (math "$fish_version >= $required_version") -eq 1
         echo "✓ Fish version $fish_version is compatible"
@@ -73,7 +79,7 @@ end
 function install_plugin
     set -l force $argv[1]
     
-    echo "Installing Fish Archive Manager v$version..."
+    echo "Installing Fish Pack v$version..."
     
     # Check if already installed
     if test -d "$HOME/.config/fish/functions" -a -f "$HOME/.config/fish/functions/extract.fish"
@@ -85,16 +91,28 @@ function install_plugin
         end
     end
     
-    # Create directories
-    mkdir -p "$HOME/.config/fish/functions"
-    mkdir -p "$HOME/.config/fish/completions"
-    mkdir -p "$HOME/.config/fish/conf.d"
+    # Create directories with error checking
+    mkdir -p "$HOME/.config/fish/functions" 2>/dev/null; or begin
+        echo "✗ Failed to create functions directory"
+        return 1
+    end
+    mkdir -p "$HOME/.config/fish/completions" 2>/dev/null; or begin
+        echo "✗ Failed to create completions directory"
+        return 1
+    end
+    mkdir -p "$HOME/.config/fish/conf.d" 2>/dev/null; or begin
+        echo "✗ Failed to create conf.d directory"
+        return 1
+    end
     
     # Install functions
     echo "Installing functions..."
     for file in $script_dir/functions/*.fish
         set -l basename (basename $file)
-        cp "$file" "$HOME/.config/fish/functions/$basename"
+        cp "$file" "$HOME/.config/fish/functions/$basename" 2>/dev/null; or begin
+            echo "  ✗ Failed to install $basename"
+            return 1
+        end
         echo "  ✓ Installed $basename"
     end
     
@@ -102,7 +120,10 @@ function install_plugin
     echo "Installing completions..."
     for file in $script_dir/completions/*.fish
         set -l basename (basename $file)
-        cp "$file" "$HOME/.config/fish/completions/$basename"
+        cp "$file" "$HOME/.config/fish/completions/$basename" 2>/dev/null; or begin
+            echo "  ✗ Failed to install $basename"
+            return 1
+        end
         echo "  ✓ Installed $basename"
     end
     
@@ -110,7 +131,10 @@ function install_plugin
     echo "Installing configuration..."
     for file in $script_dir/conf.d/*.fish
         set -l basename (basename $file)
-        cp "$file" "$HOME/.config/fish/conf.d/$basename"
+        cp "$file" "$HOME/.config/fish/conf.d/$basename" 2>/dev/null; or begin
+            echo "  ✗ Failed to install $basename"
+            return 1
+        end
         echo "  ✓ Installed $basename"
     end
     
@@ -119,7 +143,7 @@ function install_plugin
 end
 
 function uninstall_plugin
-    echo "Uninstalling Fish Archive Manager..."
+    echo "Uninstalling Fish Pack..."
     
     # Remove functions
     for file in $HOME/.config/fish/functions/{core,extract,compress,doctor}.fish
@@ -261,15 +285,17 @@ function main
     end
     
     # Final message
-    echo "🎉 Fish Archive Manager v$version installed successfully!"
+    echo "🎉 Fish Pack v$version installed successfully!"
     echo ""
     echo "Available commands:"
-    echo "  extract    - Extract archives intelligently"
+    echo "  extract    - Extract archives intelligently with security checks"
     echo "  compress   - Create archives with smart format selection"
-    echo "  doctor     - Check system capabilities and configuration"
+    echo "  check      - Check system capabilities and configuration"
+    echo "  pack       - Alternative name for compress"
+    echo "  unpack     - Alternative name for extract"
     echo ""
-    echo "Run 'extract --help', 'compress --help', or 'doctor --help' for more information."
-    echo "Run 'doctor' to check your system's archive handling capabilities."
+    echo "Run 'extract --help', 'compress --help', or 'check --help' for more information."
+    echo "Run 'check' to verify your system's archive handling capabilities."
 end
 
 # Run main function

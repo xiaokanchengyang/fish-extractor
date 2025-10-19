@@ -20,6 +20,9 @@ extract file.tar.gz
 # Create an archive
 compress backup.tar.zst ./mydata
 
+# Batch queue (sequential)
+archqueue --sequential 'compress::out.tzst::src/' 'extract::dist.zip::./out'
+
 # Check system capabilities
 doctor
 ```
@@ -34,20 +37,22 @@ doctor
 
 ## Key Features
 
-- 🎯 **Smart Format Detection** - Automatically detects and chooses optimal compression
+- 🎯 **Smart Compression Strategy** - Auto-select zstd (small/medium), pigz/gzip (large), xz (text-heavy)
 - 🚀 **High Performance** - Multi-threaded with parallel tools (pigz, pbzip2)
-- 📦 **25+ Formats** - tar, gzip, bzip2, xz, zstd, lz4, zip, 7z, rar, iso, and more
-- 🎨 **Beautiful Output** - Colorized messages, progress bars, detailed statistics
+- 📦 **Modern Formats** - tar.xz, tar.zst, tar.lz4, single-file xz/zst/lz4/gz
+- 🧰 **Cross-platform Consistency** - Auto-detect tools; macOS/Linux/Windows (MSYS2) guidance
+- 🎨 **Beautiful Output** - Progress bars with ETA/rate/avg, CPU utilization summary
 - 🔐 **Encryption Support** - Password-protected archives for zip and 7z
 - 🧪 **Testing & Verification** - Built-in integrity checking and checksum verification
 - 💾 **Backup Support** - Automatic backup before extraction
 - ✂️ **Archive Splitting** - Split large archives into manageable parts
-- 📊 **Batch Processing** - Process multiple archives efficiently
+- 📊 **Batch Queue** - `archqueue` runs tasks sequentially or in parallel
 
 ## Commands
 
 - **`extract`** - Extract archives with smart format detection
 - **`compress`** - Create archives with intelligent compression
+- **`archqueue`** - Batch queue for compress/extract tasks
 - **`doctor`** - Check system capabilities and configuration
 
 ## Quick Examples
@@ -64,6 +69,9 @@ compress backup.tar.zst ./data         # Fast compression with zstd
 compress -F tar.xz -L 9 logs.tar.xz    # Maximum compression
 compress --smart output.auto ./project # Auto-select best format
 compress -e -p secret secure.zip docs/ # Create encrypted archive
+
+# Queue tasks
+archqueue --parallel 2 'compress::a.tzst::a/' 'extract::b.zip::out'
 
 # System diagnostics
 doctor                                  # Check system capabilities
@@ -89,10 +97,10 @@ set -Ux FISH_ARCHIVE_DEFAULT_THREADS 8
 set -Ux FISH_ARCHIVE_LOG_LEVEL info
 ```
 
-## What's New in v3.0.0
+## What's New
 
-- 🎉 **Complete Rewrite** - Cleaner code, better naming conventions
-- 🔧 **Simplified Commands** - `extract`, `compress`, `doctor`
-- ✨ **Enhanced Features** - Smart detection, checksums, backups, splitting
-- 📊 **Better Output** - Compression ratios, progress indicators
-- 📚 **Comprehensive Docs** - Complete usage guide and examples
+- Smart compression strategy (zstd/pigz/xz)
+- Enhanced progress with ETA/Rate/Avg and CPU utilization summary
+- Batch task queue `archqueue`
+- Single-file compression for xz/zst/lz4/gz, etc.
+- Cross-platform install guidance (Linux/macOS/Windows)

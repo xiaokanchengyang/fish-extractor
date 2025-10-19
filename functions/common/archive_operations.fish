@@ -235,8 +235,8 @@ end
 
 function execute_compressed_file_operation --description 'Execute single compressed file operation'
     set -l operation $argv[1]  # compress or extract
-    set -l file $argv[2]
-    set -l format $argv[3]
+    set -l format $argv[2]
+    set -l file $argv[3]
     set -l dest $argv[4]
     set -l threads $argv[5]
     
@@ -244,7 +244,7 @@ function execute_compressed_file_operation --description 'Execute single compres
     if test "$operation" = "extract"
         set -l cmd (get_decompression_command $format)
     else
-        set -l cmd (get_compression_command $format 0)
+        set -l cmd (get_compression_command $format 1)
     end
     
     if test "$cmd" = "unknown"
@@ -284,9 +284,40 @@ function execute_compressed_file_operation --description 'Execute single compres
                 brotli -dc "$file" > "$outfile"
         end
     else
-        # Compression (not commonly used for single files)
-        log error "Compression of single files not supported"
-        return 1
+        # Compression for single files using modern compressors
+        switch $cmd
+            case gzip
+                gzip -c "$file" > "$file.gz"
+            case pigz
+                set -l pigz_opts -c
+                test $threads -gt 1; and set -a pigz_opts -p $threads
+                pigz $pigz_opts "$file" > "$file.gz"
+            case bzip2
+                bzip2 -c "$file" > "$file.bz2"
+            case pbzip2
+                set -l pbzip2_opts -c
+                test $threads -gt 1; and set -a pbzip2_opts -p$threads
+                pbzip2 $pbzip2_opts "$file" > "$file.bz2"
+            case xz
+                set -l xz_opts -c
+                test $threads -gt 1; and set -a xz_opts -T$threads
+                xz $xz_opts "$file" > "$file.xz"
+            case zstd
+                set -l zstd_opts -c
+                test $threads -gt 1; and set -a zstd_opts -T$threads
+                zstd $zstd_opts "$file" > "$file.zst"
+            case lz4
+                lz4 -c "$file" > "$file.lz4"
+            case lzip
+                lzip -c "$file" > "$file.lz"
+            case lzop
+                lzop -c "$file" > "$file.lzo"
+            case brotli
+                brotli -c "$file" > "$file.br"
+            case '*'
+                log error "Compression command not supported for format: $format"
+                return 1
+        end
     end
 end
 

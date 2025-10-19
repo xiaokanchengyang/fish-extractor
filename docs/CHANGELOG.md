@@ -8,19 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Common functions module for better code organization
-- Enhanced error handling and recovery
-- Comprehensive test suite improvements
+- Intelligent compression strategy: auto-select `tar.zst` for small/medium, `tar.gz` (pigz) for large, `tar.xz` for text-heavy
+- Native single-file compression support for `gz`, `bz2`, `xz`, `zst`, `lz4`, `lz`, `lzo`, `br`
+- Progress/ETA with enhanced `pv` format; post-run throughput and estimated CPU utilization
+- Batch task queue `archqueue` with sequential/parallel modes and stop-on-error
+- Cross-platform install hints in docs for Arch/Debian/macOS/Windows (MSYS2)
 
 ### Changed
-- Refactored compression and extraction functions
-- Improved code maintainability
-- Better separation of concerns
+- Smart format selection enhanced to consider total size and available parallel gzip (pigz)
+- Progress output format now shows ETA, rate, and average
+- Plugin manifest now ships tools from `tools/`
 
-### Fixed
-- Reduced code duplication
-- Improved error messages
-- Better format detection
+### Docs
+- Updated `docs/USAGE.md` with `archqueue`, smarter selection rules, progress/CPU summaries
+
+### Tests
+- Planned: add tests for single-file compression helpers and archqueue (pending)
 
 ## [3.0.0] - 2024-12-15
 
@@ -77,16 +80,6 @@ For historical changes, see [changelog/legacy.md](changelog/legacy.md).
 - **Removed**: Removed features
 - **Fixed**: Bug fixes
 - **Security**: Security improvements
-
-## Contributing
-
-When adding entries to this changelog, please follow these guidelines:
-
-1. **Use present tense**: "Add feature" not "Added feature"
-2. **Group by type**: Group changes by Added, Changed, Fixed, etc.
-3. **Be descriptive**: Explain what changed and why
-4. **Include links**: Link to issues, PRs, or commits when relevant
-5. **Follow format**: Use the established format for consistency
 
 ## Links
 

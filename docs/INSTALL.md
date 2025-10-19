@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide covers different methods to install Archivist.
+This guide covers different methods to install Fish Archive Manager.
 
 ## Prerequisites
 
@@ -11,19 +11,93 @@ This guide covers different methods to install Archivist.
   # Should show: fish, version 4.12 or higher
   ```
 
-### Minimum Tools (Arch Linux)
+## Platform-Specific Installation
+
+### Linux (Ubuntu/Debian)
 ```bash
-sudo pacman -S file tar gzip bzip2 xz zstd unzip zip
+# Required tools
+sudo apt-get update
+sudo apt-get install -y file tar gzip bzip2 xz-utils zstd lz4 lzip lzop brotli zip unzip p7zip-full p7zip-rar unrar-free pigz pbzip2 pxz pv bsdtar
+
+# Install fish (if not already installed)
+sudo apt-get install -y fish
 ```
 
-### Recommended Tools
+### Linux (Arch Linux)
 ```bash
-sudo pacman -S p7zip lz4 bsdtar pv
+# Required tools
+sudo pacman -S file tar gzip bzip2 xz zstd lz4 lzip lzop brotli zip unzip p7zip lz4 bsdtar pv pigz pbzip2 pxz
+
+# Install fish (if not already installed)
+sudo pacman -S fish
 ```
 
-### Optional Tools (Enhanced Features)
+### Linux (Fedora/RHEL)
 ```bash
-sudo pacman -S unrar lzip lzop brotli pigz pbzip2 pxz
+# Required tools
+sudo dnf install -y file tar gzip bzip2 xz zstd lz4 lzip lzop brotli zip unzip p7zip lz4 bsdtar pv pigz pbzip2 pxz
+
+# Install fish (if not already installed)
+sudo dnf install -y fish
+```
+
+### macOS
+```bash
+# Install Homebrew (if not already installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Required tools
+brew install file gnu-tar gzip bzip2 xz zstd lz4 lzip lzop brotli zip unzip p7zip unrar pigz pbzip2 pv libarchive
+
+# Install fish (if not already installed)
+brew install fish
+```
+
+### Windows
+
+#### Option A: WSL (Recommended)
+```bash
+# Install WSL2
+wsl --install
+
+# In WSL, install tools
+sudo apt-get update
+sudo apt-get install -y file tar gzip bzip2 xz-utils zstd lz4 lzip lzop brotli zip unzip p7zip-full p7zip-rar unrar-free pigz pbzip2 pxz pv bsdtar fish
+
+# Install Fish Archive Manager in WSL
+fisher install xiaokanchengyang/fish-extractor
+```
+
+#### Option B: Native Windows
+```powershell
+# Install Chocolatey (if not already installed)
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install required tools
+choco install -y 7zip
+choco install -y gnuwin32-tar
+choco install -y gnuwin32-gzip
+choco install -y gnuwin32-bzip2
+choco install -y gnuwin32-xz
+choco install -y gnuwin32-zstd
+choco install -y gnuwin32-lz4
+choco install -y gnuwin32-lzip
+choco install -y gnuwin32-lzop
+choco install -y gnuwin32-brotli
+choco install -y gnuwin32-zip
+choco install -y gnuwin32-unzip
+choco install -y gnuwin32-unrar
+choco install -y gnuwin32-pv
+
+# Install fish
+choco install -y fish
+```
+
+#### Option C: MSYS2
+```bash
+# Install MSYS2 from https://www.msys2.org/
+# Then in MSYS2 terminal:
+pacman -S file tar gzip bzip2 xz zstd lz4 lzip lzop brotli zip unzip p7zip lz4 bsdtar pv pigz pbzip2 pxz fish
 ```
 
 ## Installation Methods

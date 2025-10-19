@@ -1,0 +1,73 @@
+name: Lint and Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Fish shell
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fish
+        
+    - name: Install shellcheck
+      run: |
+        sudo apt-get install -y shellcheck
+        
+    - name: Install fish_indent (if available)
+      run: |
+        # fish_indent comes with fish shell
+        fish --version
+        
+    - name: Run shellcheck on all fish files
+      run: |
+        find . -name "*.fish" -not -path "./.git/*" | while read -r file; do
+          echo "Checking $file"
+          shellcheck "$file" || exit 1
+        done
+        
+    - name: Run fish_indent check
+      run: |
+        find . -name "*.fish" -not -path "./.git/*" | while read -r file; do
+          echo "Checking formatting for $file"
+          if ! fish_indent --check "$file"; then
+            echo "File $file is not properly formatted. Run 'fish_indent' to fix."
+            exit 1
+          fi
+        done
+        
+    - name: Check for common security issues
+      run: |
+        echo "Checking for security issues..."
+        
+        # Check for eval usage (security risk)
+        if grep -r "eval " --include="*.fish" .; then
+          echo "ERROR: Found 'eval' usage which is a security risk"
+          exit 1
+        fi
+        
+        # Check for unquoted variables in command substitution
+        if grep -r '\$[a-zA-Z_][a-zA-Z0-9_]*[^"]' --include="*.fish" . | grep -v '^[[:space:]]*#'; then
+          echo "WARNING: Found potentially unquoted variables"
+        fi
+        
+    - name: Validate function documentation
+      run: |
+        echo "Checking function documentation..."
+        find . -name "*.fish" -not -path "./.git/*" | while read -r file; do
+          # Check that functions have descriptions
+          if grep -q "^function " "$file"; then
+            if ! grep -q "--description" "$file"; then
+              echo "WARNING: Functions in $file should have --description"
+            fi
+          fi
+        done

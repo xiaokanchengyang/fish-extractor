@@ -1,6 +1,6 @@
-# Contributing to Archivist
+# Contributing to Fish Archive Manager
 
-Thank you for your interest in contributing to Archivist! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Fish Archive Manager! This document provides guidelines and instructions for contributing.
 
 ## 🤝 How to Contribute
 
@@ -8,15 +8,16 @@ Thank you for your interest in contributing to Archivist! This document provides
 
 Before submitting a bug report:
 1. Check existing issues to avoid duplicates
-2. Run `archdoctor -v` to gather system information
+2. Run `doctor -v` to gather system information
 3. Try to reproduce the issue with minimal input
 
 When reporting:
 - Include your fish version (`fish --version`)
-- Include output of `archdoctor -v`
+- Include output of `doctor -v`
 - Provide the exact command that failed
 - Include any error messages
 - Describe expected vs actual behavior
+- Include platform information (OS, architecture)
 
 ### Suggesting Features
 
@@ -50,13 +51,16 @@ We welcome feature suggestions! Please:
    fisher install .
    
    # Run diagnostics
-   archdoctor -v
+   doctor -v
    
    # Test extraction
-   archx --test test-file.tar.gz
+   extract --test test-file.tar.gz
    
    # Test compression
-   archc --dry-run test.tar.zst test-dir/
+   compress --dry-run test.tar.zst test-dir/
+   
+   # Run full test suite
+   fish tests/run_all.fish
    ```
 
 5. **Commit Your Changes**
@@ -85,7 +89,7 @@ We welcome feature suggestions! Please:
 
 2. **Function Documentation**
    ```fish
-   function __archivist__helper --description 'Brief description of what it does'
+   function helper_function --description 'Brief description of what it does'
        # Function implementation
    end
    ```
@@ -93,23 +97,36 @@ We welcome feature suggestions! Please:
 3. **Error Handling**
    ```fish
    # Always check command results
-   __archivist__require_cmds tar; or return 127
+   require_commands tar; or return 127
    
    # Validate inputs
    if not test -e "$file"
-       __archivist__log error "File not found: $file"
+       log error "File not found: $file"
        return 1
    end
    ```
 
-4. **Variable Naming**
+4. **Security Best Practices**
+   ```fish
+   # Always sanitize user input
+   set -l safe_path (sanitize_path "$user_input")
+   
+   # Use proper argument escaping
+   _safe_exec tar -cf -- "$archive" "$files"
+   
+   # Avoid eval and string concatenation
+   # Bad: eval "tar -cf $archive $files"
+   # Good: tar -cf -- "$archive" "$files"
+   ```
+
+5. **Variable Naming**
    - Use descriptive names: `archive_path` not `ap`
    - Use snake_case: `thread_count` not `threadCount`
    - Local variables: `set -l variable_name`
    - Global variables: `set -g variable_name`
    - Exported variables: `set -gx VARIABLE_NAME`
 
-5. **Comments**
+6. **Comments**
    - Use English for all comments
    - Document complex logic
    - Add section headers for readability
@@ -150,35 +167,72 @@ We welcome feature suggestions! Please:
 
 Before submitting:
 
-1. **Test All Commands**
+1. **Run Full Test Suite**
    ```fish
-   # Extraction
-   archx --help
-   archx --list test.tar.gz
-   archx --test test.tar.gz
-   archx test.tar.gz
+   # Run all tests
+   fish tests/run_all.fish
    
-   # Compression
-   archc --help
-   archc --dry-run test.tar.zst testdir/
-   archc test.tar.zst testdir/
-   
-   # Doctor
-   archdoctor
-   archdoctor -v
-   archdoctor --fix
+   # Run specific test categories
+   fish tests/test_security.fish
+   fish tests/test_platform_helpers.fish
+   fish tests/test_integration.fish
    ```
 
-2. **Test Edge Cases**
+2. **Test All Commands**
+   ```fish
+   # Extraction
+   extract --help
+   extract --list test.tar.gz
+   extract --test test.tar.gz
+   extract test.tar.gz
+   
+   # Compression
+   compress --help
+   compress --dry-run test.tar.zst testdir/
+   compress test.tar.zst testdir/
+   
+   # Doctor
+   doctor
+   doctor -v
+   doctor --fix
+   
+   # Task Queue
+   archqueue --help
+   archqueue 'compress::test.tar.gz::testdir/'
+   ```
+
+3. **Test Edge Cases**
    - Non-existent files
    - Permission issues
    - Invalid formats
    - Empty archives
    - Special characters in filenames
+   - Path traversal attempts
+   - Large files
+   - Corrupted archives
 
-3. **Test Different Formats**
+4. **Test Different Formats**
    - Test at least: tar.gz, tar.xz, tar.zst, zip, 7z
    - Test with and without optional tools
+   - Test on different platforms (Linux, macOS, Windows)
+
+5. **Security Testing**
+   ```fish
+   # Run security audit
+   fish scripts/security_audit.fish
+   
+   # Test with malicious inputs
+   extract "../../../etc/passwd.tar.gz"
+   compress "file; rm -rf /" test.tar.gz
+   ```
+
+6. **Performance Testing**
+   ```fish
+   # Test with large files
+   dd if=/dev/zero of=large.bin bs=1M count=100
+   compress large.tar.zst large.bin
+   extract large.tar.zst
+   ```
 
 ### Documentation
 
@@ -230,15 +284,21 @@ Pull requests will be reviewed for:
 
 ```fish
 # Enable debug logging
-set -gx ARCHIVIST_LOG_LEVEL debug
+set -gx FISH_ARCHIVE_LOG_LEVEL debug
 
 # Verbose output
-archx -v file.tar.gz
-archc -v output.tar.zst input/
+extract -v file.tar.gz
+compress -v output.tar.zst input/
 
 # Dry run mode
-archx --dry-run file.tar.gz
-archc --dry-run output.tar.zst input/
+extract --dry-run file.tar.gz
+compress --dry-run output.tar.zst input/
+
+# Run security audit
+fish scripts/security_audit.fish
+
+# Check platform detection
+fish tests/test_platform_helpers.fish
 ```
 
 ### Local Testing
@@ -248,21 +308,27 @@ archc --dry-run output.tar.zst input/
 fisher install .
 
 # Reload functions after changes
-source ~/.config/fish/conf.d/archivist.fish
+source ~/.config/fish/conf.d/archive_manager.fish
 
 # Uninstall
-fisher remove archivist
+fisher remove xiaokanchengyang/fish-extractor
 ```
 
 ### Performance Profiling
 
 ```fish
 # Time operations
-time archx large-file.tar.gz
-time archc output.tar.zst large-dir/
+time extract large-file.tar.gz
+time compress output.tar.zst large-dir/
 
 # Check thread usage
-archc -t 1 vs -t (nproc) output.tar.zst input/
+compress -t 1 output.tar.zst input/
+compress -t (nproc) output.tar.zst input/
+
+# Profile with different compression levels
+for level in 1 3 6 9
+    time compress -L $level test-$level.tar.zst input/
+end
 ```
 
 ## 🚀 Release Process

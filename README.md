@@ -1,10 +1,10 @@
-# Fish Archive Manager
+# Fish Pack
 
-[![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
+[![Fish Shell](https://img.shields.io/badge/fish-4.1.2%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-extractor)
+[![Version](https://img.shields.io/badge/version-4.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-pack)
 
-**Fish Archive Manager** is a professional-grade archive management tool for the [fish shell](https://fishshell.com/). It provides powerful, intuitive commands for extracting and compressing archives with smart format detection, parallel processing, and comprehensive options.
+**Fish Pack** is a secure, professional-grade archive management tool for the [fish shell](https://fishshell.com/). It provides powerful, intuitive commands for packing and unpacking archives with smart format detection, parallel processing, enhanced security features, and comprehensive options.
 
 [English](README.md) | [简体中文](README_CN.md)
 
@@ -12,7 +12,7 @@
 
 ```fish
 # Install using Fisher
-fisher install xiaokanchengyang/fish-extractor
+fisher install xiaokanchengyang/fish-pack
 
 # Extract an archive
 extract file.tar.gz
@@ -24,7 +24,7 @@ compress backup.tar.zst ./mydata
 archqueue --sequential 'compress::out.tzst::src/' 'extract::dist.zip::./out'
 
 # Check system capabilities
-doctor
+check
 ```
 
 ## Documentation
@@ -53,7 +53,7 @@ doctor
 - **`extract`** - Extract archives with smart format detection
 - **`compress`** - Create archives with intelligent compression
 - **`archqueue`** - Batch queue for compress/extract tasks
-- **`doctor`** - Check system capabilities and configuration
+- **`check`** - Check system capabilities and configuration
 
 ## Quick Examples
 
@@ -74,9 +74,9 @@ compress -e -p secret secure.zip docs/ # Create encrypted archive
 archqueue --parallel 2 'compress::a.tzst::a/' 'extract::b.zip::out'
 
 # System diagnostics
-doctor                                  # Check system capabilities
-doctor -v                              # Detailed information
-doctor --fix                           # Get installation suggestions
+check                                  # Check system capabilities
+check -v                              # Detailed information
+check --fix                           # Get installation suggestions
 ```
 
 ## Requirements

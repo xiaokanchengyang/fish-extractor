@@ -136,8 +136,8 @@ function safe_execute --description 'Execute command with error handling'
         handle_command_error $command $operation
     end
     
-    # Execute command
-    eval $command $args
+    # Execute command safely
+    $command $args
     set -l exit_code $status
     
     # Handle command failure
@@ -158,8 +158,8 @@ function safe_execute_with_output --description 'Execute command and capture out
         handle_command_error $command $operation
     end
     
-    # Execute command and capture output
-    set -l output (eval $command $args 2>&1)
+    # Execute command and capture output safely
+    set -l output ($command $args 2>&1)
     set -l exit_code $status
     
     # Handle command failure

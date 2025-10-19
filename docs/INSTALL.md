@@ -1,14 +1,14 @@
 # Installation Guide
 
-This guide covers different methods to install Fish Archive Manager.
+This guide covers different methods to install Fish Pack.
 
 ## Prerequisites
 
 ### Required
-- **fish shell** version 4.12 or later
+- **fish shell** version 4.1.2 or later
   ```bash
   fish --version
-  # Should show: fish, version 4.12 or higher
+  # Should show: fish, version 4.1.2 or higher
   ```
 
 ## Platform-Specific Installation

@@ -269,8 +269,12 @@ function _create_temp_file --description 'Create temporary file with proper perm
             echo "/tmp/$prefix.$$.tmp"
         end
     else
-        # Unix-like systems
-        mktemp --tmpdir="$prefix.XXXXXX" 2>/dev/null; or echo "/tmp/$prefix.$$.tmp"
+        # Unix-like systems - always use mktemp for security
+        set -l tmpdir (test -d "$TMPDIR"; and echo "$TMPDIR"; or echo "/tmp")
+        mktemp "$tmpdir/$prefix.XXXXXX" 2>/dev/null; or begin
+            __fish_archive_log error "mktemp failed - install coreutils for secure temp files"
+            return 1
+        end
     end
 end
 
@@ -289,8 +293,12 @@ function _create_temp_dir --description 'Create temporary directory with proper 
             echo "/tmp/$prefix.$$"
         end
     else
-        # Unix-like systems
-        mktemp -d --tmpdir="$prefix.XXXXXX" 2>/dev/null; or echo "/tmp/$prefix.$$"
+        # Unix-like systems - always use mktemp for security
+        set -l tmpdir (test -d "$TMPDIR"; and echo "$TMPDIR"; or echo "/tmp")
+        mktemp -d "$tmpdir/$prefix.XXXXXX" 2>/dev/null; or begin
+            __fish_archive_log error "mktemp failed - install coreutils for secure temp directories"
+            return 1
+        end
     end
 end
 

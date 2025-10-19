@@ -135,16 +135,16 @@ set -Ux FISH_ARCHIVE_DEFAULT_FORMAT auto
 # ============================================================================
 
 # Check system capabilities
-doctor
+check
 
 # Get detailed system information
-doctor -v
+check -v
 
 # Get installation suggestions
-doctor --fix
+check --fix
 
 # Export diagnostic report
-doctor --export
+check --export
 
 # Quiet mode (only errors)
-doctor -q
+check -q

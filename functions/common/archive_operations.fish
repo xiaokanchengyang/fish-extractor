@@ -7,6 +7,8 @@ source (dirname (status --current-filename))/../core.fish
 source (dirname (status --current-filename))/../format_handlers.fish
 # Load error handling
 source (dirname (status --current-filename))/../error_handling.fish
+# Load safe execution helpers
+source (dirname (status --current-filename))/safe_exec.fish
 
 # ============================================================================
 # Common Archive Operation Functions
@@ -36,13 +38,9 @@ function execute_archive_command --description 'Execute archive command with com
     # Execute with progress if enabled
     if test $progress -eq 1; and can_show_progress
         set -l size (get_file_size "$target")
-        if test $size -gt 10485760  # 10MB
-            eval $full_command | show_progress_bar $size
-        else
-            eval $full_command
-        end
+        __fish_pack_exec_with_progress $full_command $size
     else
-        eval $full_command
+        __fish_pack_safe_exec $full_command
     end
     
     set -l exit_code $status

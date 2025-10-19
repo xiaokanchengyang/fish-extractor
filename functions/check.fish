@@ -8,11 +8,16 @@ source (dirname (status --current-filename))/format_handlers.fish
 # Load error handling
 source (dirname (status --current-filename))/error_handling.fish
 
-function doctor --description 'Diagnose archive tool environment and capabilities'
+function check --description 'Check system capabilities and configuration for Fish Pack'
+# Alias for backward compatibility
+function doctor --description 'Alias for check command (deprecated)'
+    echo "Note: 'doctor' is deprecated, please use 'check' instead" >&2
+    check $argv
+end
     set -l usage "\
-doctor - Diagnostic tool for Fish Archive Manager
+check - System diagnostic tool for Fish Pack
 
-Usage: doctor [OPTIONS]
+Usage: check [OPTIONS]
 
 Options:
   -v, --verbose           Show detailed information
@@ -78,12 +83,12 @@ Description:
     # Display header
     test $quiet -eq 0; and begin
         colorize cyan "\n╔════════════════════════════════════════════════╗\n"
-        colorize cyan "║        Fish Archive Manager Environment Doctor ║\n"
+        colorize cyan "║          Fish Pack System Check               ║\n"
         colorize cyan "╚════════════════════════════════════════════════╝\n"
         echo ""
     end
 
-    set -a report_lines "Fish Archive Manager Diagnostic Report"
+    set -a report_lines "Fish Pack Diagnostic Report"
     set -a report_lines "Generated: "(date)
     set -a report_lines ""
 
@@ -96,7 +101,7 @@ Description:
         if has_command $cmd
             set required_ok (math $required_ok + 1)
             if should_show_info $quiet
-                set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
+                set -l version ($cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
                 if should_show_verbose $verbose $quiet; and test -n "$version"
                     colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
                     set -a report_lines "✓ $cmd: $version"
@@ -125,7 +130,7 @@ Description:
         if has_command $cmd
             set important_ok (math $important_ok + 1)
             if test $quiet -eq 0
-                set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
+                set -l version ($cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
                 if test $verbose -eq 1; and test -n "$version"
                     colorize green (printf "  ✓ %-15s %s\n" $cmd $version)
                     set -a report_lines "✓ $cmd: $version"
@@ -152,7 +157,7 @@ Description:
         for cmd in $optional
             if has_command $cmd
                 set optional_found (math $optional_found + 1)
-                set -l version (eval $cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
+                set -l version ($cmd --version 2>/dev/null | head -n1 | string replace -r '.*?([0-9]+\\.[0-9]+[^ ]*).*' '$1')
                 if test -n "$version"
                     colorize cyan (printf "  + %-15s %s\n" $cmd $version)
                     set -a report_lines "+ $cmd: $version"
@@ -401,7 +406,7 @@ Description:
 
     # Export report if requested
     if test $export_report -eq 1
-        set -l report_file "fish-archive-diagnostic-"(date +%Y%m%d_%H%M%S)".txt"
+        set -l report_file "fish-pack-diagnostic-"(date +%Y%m%d_%H%M%S)".txt"
         printf "%s\n" $report_lines > $report_file
         log info "Diagnostic report exported to: $report_file"
     end

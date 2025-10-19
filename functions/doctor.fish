@@ -243,6 +243,23 @@ Description:
         has_command pbzip2; and set -a perf_features "✓ Parallel bzip2 (pbzip2)"; or set -a perf_features "✗ Parallel bzip2 (pbzip2 not found)"
         has_command pv; and set -a perf_features "✓ Progress viewer (pv)"; or set -a perf_features "✗ Progress viewer (pv not found)"
         
+        # Check for parallel xz/zstd support
+        if has_command pxz
+            set -a perf_features "✓ Parallel xz (pxz)"
+        else
+            set -a perf_features "⚠ Parallel xz (pxz not found, using single-threaded xz)"
+        end
+        
+        # Check zstd threading support
+        if has_command zstd
+            set -l zstd_version (zstd --version 2>/dev/null | head -n1)
+            if string match -q "*threading*" -- $zstd_version; or string match -q "*multi-thread*" -- $zstd_version
+                set -a perf_features "✓ Multi-threaded zstd"
+            else
+                set -a perf_features "⚠ Single-threaded zstd (consider upgrading)"
+            end
+        end
+        
         for feat in $perf_features
             echo "  $feat"
             set -a report_lines "  $feat"
@@ -318,6 +335,24 @@ Description:
             if not has_command pbzip2
                 echo "  • Install 'pbzip2' for parallel bzip2 compression"
                 set -a report_lines "  • Install 'pbzip2' for parallel bzip2 compression"
+            end
+            if not has_command pxz
+                echo "  • Install 'pxz' for parallel xz compression"
+                set -a report_lines "  • Install 'pxz' for parallel xz compression"
+            end
+            
+            # Platform-specific recommendations
+            set -l platform (detect_platform)
+            switch $platform
+                case linux
+                    echo "  • Linux: Consider using 'zstd' with threading support"
+                    set -a report_lines "  • Linux: Consider using 'zstd' with threading support"
+                case macos
+                    echo "  • macOS: Use 'brew install zstd' for latest version"
+                    set -a report_lines "  • macOS: Use 'brew install zstd' for latest version"
+                case windows
+                    echo "  • Windows: Consider WSL for better tool support"
+                    set -a report_lines "  • Windows: Consider WSL for better tool support"
             end
             
             echo ""

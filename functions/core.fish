@@ -5,6 +5,8 @@
 source (dirname (status --current-filename))/format_handlers.fish
 # Load error handling
 source (dirname (status --current-filename))/error_handling.fish
+# Load platform helpers
+source (dirname (status --current-filename))/common/platform_helpers.fish
 
 # ============================================================================
 # Color and Output Management
@@ -172,7 +174,7 @@ function resolve_threads --description 'Resolve thread count from arguments or d
     else if test -n "$FISH_ARCHIVE_DEFAULT_THREADS"
         echo $FISH_ARCHIVE_DEFAULT_THREADS
     else
-        nproc 2>/dev/null; or sysctl -n hw.ncpu 2>/dev/null; or echo 4
+        _detect_cores
     end
 end
 
@@ -247,7 +249,7 @@ end
 function get_file_size --description 'Get file size in bytes'
     set -l file $argv[1]
     test -f "$file"; or return 1
-    stat -c %s "$file" 2>/dev/null; or stat -f %z "$file" 2>/dev/null; or echo 0
+    _stat_size "$file"
 end
 
 function human_size --description 'Convert bytes to human-readable size'

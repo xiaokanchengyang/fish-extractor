@@ -1,0 +1,125 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        fish-version: [4.12, latest]
+        
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Fish shell
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          sudo apt-get update
+          sudo apt-get install -y fish
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          brew install fish
+        else
+          # Windows - install via chocolatey or download
+          choco install fish
+        fi
+        
+    - name: Install archive tools (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get install -y \
+          file tar gzip bzip2 xz-utils zstd lz4 lzip lzop brotli \
+          zip unzip p7zip-full p7zip-rar unrar-free \
+          pigz pbzip2 pxz pv \
+          bsdtar
+          
+    - name: Install archive tools (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install \
+          file gnu-tar gzip bzip2 xz zstd lz4 lzip lzop brotli \
+          zip unzip p7zip unrar \
+          pigz pbzip2 pv \
+          libarchive
+          
+    - name: Install archive tools (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        # Install via chocolatey
+        choco install -y 7zip
+        # Install via winget
+        winget install --id=GnuWin32.Tar
+        winget install --id=GnuWin32.Gzip
+        winget install --id=GnuWin32.Bzip2
+        winget install --id=GnuWin32.Xz
+        winget install --id=GnuWin32.Zstd
+        winget install --id=GnuWin32.Lz4
+        winget install --id=GnuWin32.Lzip
+        winget install --id=GnuWin32.Lzop
+        winget install --id=GnuWin32.Brotli
+        winget install --id=GnuWin32.Zip
+        winget install --id=GnuWin32.Unzip
+        winget install --id=GnuWin32.Unrar
+        winget install --id=GnuWin32.Pv
+        
+    - name: Run doctor command
+      run: |
+        fish -c "source fish_archive.fish; doctor -v"
+        
+    - name: Run basic functionality tests
+      run: |
+        fish -c "
+          source fish_archive.fish
+          
+          # Create test directory
+          mkdir -p test_data
+          echo 'test content' > test_data/test.txt
+          echo 'more content' > test_data/test2.txt
+          
+          # Test compression
+          compress test.tar.gz test_data/
+          compress test.tar.zst test_data/
+          compress test.zip test_data/
+          
+          # Test extraction
+          extract test.tar.gz
+          extract test.tar.zst
+          extract test.zip
+          
+          # Test doctor
+          doctor --fix
+          
+          # Cleanup
+          rm -rf test_data test.tar.gz test.tar.zst test.zip
+        "
+        
+    - name: Run integration tests
+      run: |
+        fish -c "
+          source fish_archive.fish
+          
+          # Run the test suite
+          if test -f tests/run_all.fish
+            fish tests/run_all.fish
+          fi
+        "
+        
+    - name: Test Windows-specific functionality
+      if: matrix.os == 'windows-latest'
+      run: |
+        fish -c "
+          source fish_archive.fish
+          
+          # Test WSL detection
+          doctor -v
+          
+          # Test Windows-specific paths
+          compress 'C:\temp\test.tar.gz' test_data/
+        "

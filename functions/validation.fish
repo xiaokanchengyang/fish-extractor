@@ -68,7 +68,7 @@ function validate_output_path --description 'Validate and prepare output path'
     set -l path $argv[1]
     set -l auto_rename $argv[2]
     set -l timestamp $argv[3]
-    
+
     # Add timestamp if requested
     if is_timestamp $timestamp
         set -l base_name (string replace -r '\.[^.]+$' '' -- (basename $path))
@@ -76,7 +76,7 @@ function validate_output_path --description 'Validate and prepare output path'
         set -l dir_name (dirname $path)
         set path "$dir_name/$base_name-"(date +%Y%m%d_%H%M%S)"$extension"
     end
-    
+
     # Auto-rename if output exists
     if is_auto_rename $auto_rename; and test -e "$path"
         set -l counter 1
@@ -88,7 +88,7 @@ function validate_output_path --description 'Validate and prepare output path'
             set counter (math $counter + 1)
         end
     end
-    
+
     echo $path
 end
 
@@ -99,18 +99,18 @@ function validate_extract_dir --description 'Validate and prepare extraction dir
     set -l timestamp $argv[4]
     set -l force $argv[5]
     set -l backup $argv[6]
-    
+
     # Determine extraction directory
     set -l extract_dir $dest
     if test -z "$extract_dir"
         set extract_dir (default_extract_dir "$archive_path")
     end
-    
+
     # Add timestamp if requested
     if is_timestamp $timestamp
         set extract_dir "$extract_dir-"(date +%Y%m%d_%H%M%S)
     end
-    
+
     # Auto-rename if destination exists
     if is_auto_rename $auto_rename; and test -e "$extract_dir"
         set -l counter 1
@@ -120,9 +120,9 @@ function validate_extract_dir --description 'Validate and prepare extraction dir
             set counter (math $counter + 1)
         end
     end
-    
+
     set extract_dir (sanitize_path $extract_dir)
-    
+
     # Create extraction directory
     if not test -d "$extract_dir"
         mkdir -p "$extract_dir"
@@ -149,7 +149,7 @@ function validate_extract_dir --description 'Validate and prepare extraction dir
             end
         end
     end
-    
+
     echo $extract_dir
 end
 
@@ -162,18 +162,18 @@ function validate_archive_operation --description 'Validate archive operation pa
     set -l format $argv[2]
     set -l password $argv[3]
     set -l encrypt $argv[4]
-    
+
     # Validate archive file
     if not validate_archive "$archive"
         return 1
     end
-    
+
     # Check encryption requirements
     if is_encrypt $encrypt; and test -z "$password"
         log error "Password required for encrypted archives"
         return 1
     end
-    
+
     # Check format-specific requirements
     switch $format
         case zip 7z
@@ -185,7 +185,7 @@ function validate_archive_operation --description 'Validate archive operation pa
                 return 1
             end
     end
-    
+
     return 0
 end
 
@@ -197,14 +197,14 @@ function should_show_progress --description 'Determine if progress should be sho
     set -l progress_flag $argv[1]
     set -l quiet $argv[2]
     set -l file_size $argv[3]
-    
+
     is_progress_enabled $progress_flag; and not is_quiet $quiet; and test $file_size -gt 10485760
 end
 
 function should_show_verbose --description 'Determine if verbose output should be shown'
     set -l verbose $argv[1]
     set -l quiet $argv[2]
-    
+
     is_verbose $verbose; and not is_quiet $quiet
 end
 
@@ -219,59 +219,59 @@ end
 function get_compression_command --description 'Get the best available compression command'
     set -l format $argv[1]
     set -l parallel $argv[2]
-    
+
     switch $format
         case gzip tar.gz
             if test $parallel -eq 1; and has_command pigz
-                echo "pigz"
+                echo pigz
             else
-                echo "gzip"
+                echo gzip
             end
         case bzip2 tar.bz2
             if test $parallel -eq 1; and has_command pbzip2
-                echo "pbzip2"
+                echo pbzip2
             else
-                echo "bzip2"
+                echo bzip2
             end
         case xz tar.xz
-            echo "xz"
+            echo xz
         case zstd tar.zst
-            echo "zstd"
+            echo zstd
         case lz4 tar.lz4
-            echo "lz4"
+            echo lz4
         case lzip tar.lz
-            echo "lzip"
+            echo lzip
         case lzop tar.lzo
-            echo "lzop"
+            echo lzop
         case brotli tar.br
-            echo "brotli"
+            echo brotli
         case '*'
-            echo "unknown"
+            echo unknown
     end
 end
 
 function get_decompression_command --description 'Get the best available decompression command'
     set -l format $argv[1]
-    
+
     switch $format
         case gzip tar.gz
-            echo "gunzip"
+            echo gunzip
         case bzip2 tar.bz2
-            echo "bunzip2"
+            echo bunzip2
         case xz tar.xz
-            echo "unxz"
+            echo unxz
         case zstd tar.zst
-            echo "unzstd"
+            echo unzstd
         case lz4 tar.lz4
-            echo "unlz4"
+            echo unlz4
         case lzip tar.lz
-            echo "lunzip"
+            echo lunzip
         case lzop tar.lzo
-            echo "lzop"
+            echo lzop
         case brotli tar.br
-            echo "brotli"
+            echo brotli
         case '*'
-            echo "unknown"
+            echo unknown
     end
 end
 
@@ -283,7 +283,7 @@ function handle_operation_error --description 'Handle operation errors with appr
     set -l operation $argv[1]
     set -l target $argv[2]
     set -l error_code $argv[3]
-    
+
     switch $error_code
         case 1
             log error "$operation failed: $target"
@@ -298,13 +298,13 @@ end
 
 function check_required_commands --description 'Check if required commands are available for operation'
     set -l format $argv[1]
-    set -l operation $argv[2]  # extract or compress
-    
+    set -l operation $argv[2] # extract or compress
+
     switch $format
         case tar tar.gz tar.bz2 tar.xz tar.zst tar.lz4 tar.lz tar.lzo tar.br
             require_commands tar
         case zip
-            if test "$operation" = "extract"
+            if test "$operation" = extract
                 require_commands unzip
             else
                 require_commands zip
@@ -331,7 +331,7 @@ function check_required_commands --description 'Check if required commands are a
             end
         case gzip gz bzip2 bz2 xz zstd zst lz4 lz lzip lzo brotli br
             set -l cmd (get_decompression_command $format)
-            if test "$cmd" != "unknown"
+            if test "$cmd" != unknown
                 require_commands $cmd
             end
     end
@@ -342,12 +342,12 @@ end
 # ============================================================================
 
 function show_operation_summary --description 'Show operation summary'
-    set -l operation $argv[1]  # extract or compress
+    set -l operation $argv[1] # extract or compress
     set -l success_count $argv[2]
     set -l fail_count $argv[3]
     set -l total $argv[4]
     set -l quiet $argv[5]
-    
+
     if not is_quiet $quiet; and test $total -gt 1
         echo ""
         if test $fail_count -eq 0
@@ -367,14 +367,14 @@ function show_file_info --description 'Show file information'
     set -l operation $argv[6]
     set -l current $argv[7]
     set -l total $argv[8]
-    
+
     if not is_quiet $quiet
         if test $total -gt 1
             log info "[$current/$total] $operation: $file"
         else
             log info "$operation: $file"
         end
-        
+
         if should_show_verbose $verbose $quiet
             log debug "  Format: $format"
             log debug "  Size: "(human_size $size)

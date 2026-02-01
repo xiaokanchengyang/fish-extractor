@@ -12,26 +12,26 @@ source (dirname (status --current-filename))/safe_exec.fish
 
 function __fish_archive_execute_with_progress --description 'Execute command with enhanced progress handling'
     set -l command $argv[1]
-    set -l operation $argv[2]  # compress or extract
+    set -l operation $argv[2] # compress or extract
     set -l target $argv[3]
     set -l format $argv[4]
     set -l verbose $argv[5]
     set -l progress $argv[6]
     set -l threads $argv[7]
     set -l args $argv[8..-1]
-    
+
     # Check command availability
     if not __fish_archive_has_command $command
         __fish_archive_log error "Command not found: $command"
         return 127
     end
-    
+
     # Build command with modern Fish features
     set -l full_command $command
     for arg in $args
         set full_command $full_command $arg
     end
-    
+
     # Execute with progress if enabled
     if test $progress -eq 1; and __fish_archive_can_show_progress
         set -l size (__fish_archive_get_file_size "$target")
@@ -39,15 +39,15 @@ function __fish_archive_execute_with_progress --description 'Execute command wit
     else
         __fish_pack_safe_exec $full_command
     end
-    
+
     set -l exit_code $status
-    
+
     # Enhanced error handling
     if test $exit_code -ne 0
         __fish_archive_log error "Command failed with exit code $exit_code: $command"
         return $exit_code
     end
-    
+
     return 0
 end
 
@@ -60,53 +60,63 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
     set -l password $argv[6]
     set -l output $argv[7]
     set -l inputs $argv[8..-1]
-    
+
     set -l args
-    
+
     # Format-specific argument preparation
     switch $format
-        case 'tar.gz' 'tgz'
+        case 'tar.gz' tgz
             if __fish_archive_has_command pigz; and test $threads -gt 1
                 set -l cmd "pigz -p $threads"
-                if test $level -gt 0; set cmd "$cmd -$level"; end
+                if test $level -gt 0
+                    set cmd "$cmd -$level"
+                end
                 set -a args tar -I "$cmd" -cf
             else
                 if test $level -gt 0
-                     set -a args tar -I "gzip -$level" -cf
+                    set -a args tar -I "gzip -$level" -cf
                 else
-                     set -a args tar -czf
+                    set -a args tar -czf
                 end
             end
-            
-        case 'tar.bz2' 'tbz2' 'tbz'
+
+        case 'tar.bz2' tbz2 tbz
             if __fish_archive_has_command pbzip2; and test $threads -gt 1
                 set -l cmd "pbzip2 -p$threads"
-                if test $level -gt 0; set cmd "$cmd -$level"; end
+                if test $level -gt 0
+                    set cmd "$cmd -$level"
+                end
                 set -a args tar -I "$cmd" -cf
             else
-                 if test $level -gt 0
-                     set -a args tar -I "bzip2 -$level" -cf
+                if test $level -gt 0
+                    set -a args tar -I "bzip2 -$level" -cf
                 else
-                     set -a args tar -cjf
+                    set -a args tar -cjf
                 end
             end
-            
-        case 'tar.xz' 'txz'
+
+        case 'tar.xz' txz
             if test $level -gt 0; or test $threads -gt 1
-                set -l cmd "xz"
-                if test $level -gt 0; set cmd "$cmd -$level"; end
-                if test $threads -gt 1; set cmd "$cmd -T$threads"; end
+                set -l cmd xz
+                if test $level -gt 0
+                    set cmd "$cmd -$level"
+                end
+                if test $threads -gt 1
+                    set cmd "$cmd -T$threads"
+                end
                 set -a args tar -I "$cmd" -cf
             else
                 set -a args tar -cJf
             end
-            
-        case 'tar.zst' 'tzst'
+
+        case 'tar.zst' tzst
             set -l cmd "zstd -T$threads"
-            if test $level -gt 0; set cmd "$cmd -$level"; end
+            if test $level -gt 0
+                set cmd "$cmd -$level"
+            end
             set -a args tar -I "$cmd" -cf
-            
-        case 'zip'
+
+        case zip
             set -a args zip
             if test $level -gt 0
                 set -a args -$level
@@ -117,8 +127,8 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
                     set -a args -P "$password"
                 end
             end
-            
-        case '7z'
+
+        case 7z
             set -a args 7z a
             if test $level -gt 0
                 set -a args -mx$level
@@ -130,15 +140,15 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
                 set -a args -p"$password"
             end
             set -a args -t7z
-            
+
         case '*'
             __fish_archive_log error "Unsupported format: $format"
             return 1
     end
-    
+
     # Add output and inputs
     set -a args "$output" $inputs
-    
+
     printf '%s\n' $args
 end
 
@@ -151,74 +161,74 @@ function __fish_archive_prepare_extraction_args --description 'Prepare extractio
     set -l preserve_perms $argv[6]
     set -l archive $argv[7]
     set -l destination $argv[8]
-    
+
     set -l args
-    
+
     # Format-specific argument preparation
     switch $format
-        case 'tar.gz' 'tgz'
+        case 'tar.gz' tgz
             if __fish_archive_has_command pigz; and test $threads -gt 1
                 set -a args tar -I "pigz -p $threads"
             else
                 set -a args tar -xzf
             end
-            
-        case 'tar.bz2' 'tbz2' 'tbz'
+
+        case 'tar.bz2' tbz2 tbz
             if __fish_archive_has_command pbzip2; and test $threads -gt 1
                 set -a args tar -I "pbzip2 -p$threads"
             else
                 set -a args tar -xjf
             end
-            
-        case 'tar.xz' 'txz'
+
+        case 'tar.xz' txz
             set -a args tar -xJf
-            
-        case 'tar.zst' 'tzst'
+
+        case 'tar.zst' tzst
             set -a args tar -I "zstd -T$threads" -xf
-            
-        case 'zip'
+
+        case zip
             set -a args unzip
             if test -n "$password"
                 set -a args -P "$password"
             end
-            
-        case '7z'
+
+        case 7z
             set -a args 7z x
             if test -n "$password"
                 set -a args -p"$password"
             end
-            
-        case 'rar'
+
+        case rar
             set -a args unrar x
             if test -n "$password"
                 set -a args -p"$password"
             end
-            
+
         case '*'
             # Try bsdtar as fallback
             set -a args bsdtar -xf
-            
+
     end
-    
+
     # Add common options
     if test $strip -gt 0
         set -a args --strip-components $strip
     end
-    
+
     if test $flat -eq 1
         set -a args -j
     end
-    
+
     if test $preserve_perms -eq 0
         set -a args --no-same-permissions
     end
-    
+
     # Add archive and destination
     set -a args "$archive"
     if test -n "$destination"
         set -a args -C "$destination"
     end
-    
+
     printf '%s\n' $args
 end
 
@@ -230,9 +240,9 @@ function __fish_archive_collect_and_filter_files --description 'Collect and filt
     set -l inputs $argv[1..-3]
     set -l include_patterns $argv[-2]
     set -l exclude_patterns $argv[-1]
-    
+
     set -l file_list
-    
+
     # Collect files with modern Fish features
     for input in $inputs
         if test -f "$input"
@@ -250,7 +260,7 @@ function __fish_archive_collect_and_filter_files --description 'Collect and filt
             end
         end
     end
-    
+
     # Apply include patterns
     if test -n "$include_patterns"
         set -l filtered
@@ -268,7 +278,7 @@ function __fish_archive_collect_and_filter_files --description 'Collect and filt
         end
         set file_list $filtered
     end
-    
+
     # Apply exclude patterns
     if test -n "$exclude_patterns"
         set -l filtered
@@ -286,16 +296,16 @@ function __fish_archive_collect_and_filter_files --description 'Collect and filt
         end
         set file_list $filtered
     end
-    
+
     echo $file_list
 end
 
 function __fish_archive_validate_inputs --description 'Validate input files with comprehensive checks'
     set -l inputs $argv
-    
+
     set -l valid_inputs
     set -l errors
-    
+
     for input in $inputs
         if test -f "$input"
             set -a valid_inputs "$input"
@@ -305,19 +315,19 @@ function __fish_archive_validate_inputs --description 'Validate input files with
             set -a errors "Input not found: $input"
         end
     end
-    
+
     if test (count $errors) -gt 0
         for error in $errors
             __fish_archive_log error $error
         end
         return 1
     end
-    
+
     if test (count $valid_inputs) -eq 0
         __fish_archive_log error "No valid input files found"
         return 1
     end
-    
+
     echo $valid_inputs
 end
 
@@ -328,20 +338,20 @@ end
 function __fish_archive_test_archive_integrity --description 'Test archive integrity with format-specific methods'
     set -l archive $argv[1]
     set -l format $argv[2]
-    
+
     switch $format
-        case 'tar.gz' 'tgz' 'tar.bz2' 'tbz2' 'tbz' 'tar.xz' 'txz' 'tar.zst' 'tzst'
+        case 'tar.gz' tgz 'tar.bz2' tbz2 tbz 'tar.xz' txz 'tar.zst' tzst
             tar -tf "$archive" >/dev/null 2>&1
-            
-        case 'zip'
+
+        case zip
             unzip -t "$archive" >/dev/null 2>&1
-            
-        case '7z'
+
+        case 7z
             7z t "$archive" >/dev/null 2>&1
-            
-        case 'rar'
+
+        case rar
             unrar t "$archive" >/dev/null 2>&1
-            
+
         case '*'
             # Try bsdtar as fallback
             bsdtar -tf "$archive" >/dev/null 2>&1
@@ -351,20 +361,20 @@ end
 function __fish_archive_list_archive_contents --description 'List archive contents with format-specific methods'
     set -l archive $argv[1]
     set -l format $argv[2]
-    
+
     switch $format
-        case 'tar.gz' 'tgz' 'tar.bz2' 'tbz2' 'tbz' 'tar.xz' 'txz' 'tar.zst' 'tzst'
+        case 'tar.gz' tgz 'tar.bz2' tbz2 tbz 'tar.xz' txz 'tar.zst' tzst
             tar -tf "$archive"
-            
-        case 'zip'
+
+        case zip
             unzip -l "$archive"
-            
-        case '7z'
+
+        case 7z
             7z l "$archive"
-            
-        case 'rar'
+
+        case rar
             unrar l "$archive"
-            
+
         case '*'
             # Try bsdtar as fallback
             bsdtar -tf "$archive"
@@ -376,25 +386,25 @@ end
 # ============================================================================
 
 function __fish_archive_show_operation_summary --description 'Show operation summary with modern formatting'
-    set -l operation $argv[1]  # compress or extract
+    set -l operation $argv[1] # compress or extract
     set -l format $argv[2]
     set -l input_count $argv[3]
     set -l output_size $argv[4]
     set -l duration $argv[5]
     set -l cpu_pct $argv[6]
-    
+
     set -l operation_name (string capitalize $operation)
     set -l format_display (string upper $format)
-    
+
     __fish_archive_log info "$operation_name completed successfully"
     __fish_archive_log info "Format: $format_display"
     __fish_archive_log info "Files processed: $input_count"
-    
+
     if test $output_size -gt 0
         set -l size_human (__fish_archive_human_size $output_size)
         __fish_archive_log info "Output size: $size_human"
     end
-    
+
     if test $duration -gt 0
         __fish_archive_log info "Duration: "$duration"s"
         if test $output_size -gt 0
@@ -412,12 +422,12 @@ function __fish_archive_show_compression_stats --description 'Show compression s
     set -l original_size $argv[1]
     set -l compressed_size $argv[2]
     set -l format $argv[3]
-    
+
     if test $original_size -gt 0; and test $compressed_size -gt 0
         set -l ratio (math -s1 "100 - ($compressed_size * 100 / $original_size)")
         set -l original_human (__fish_archive_human_size $original_size)
         set -l compressed_human (__fish_archive_human_size $compressed_size)
-        
+
         __fish_archive_log info "Compression ratio: $ratio%"
         __fish_archive_log info "Original size: $original_human"
         __fish_archive_log info "Compressed size: $compressed_human"
@@ -433,15 +443,15 @@ function __fish_archive_handle_operation_error --description 'Handle operation e
     set -l format $argv[2]
     set -l error_code $argv[3]
     set -l details $argv[4..-1]
-    
+
     set -l suggestions
-    
+
     switch $error_code
         case 127
             set suggestions "Install required tools using your package manager"
         case 1
             switch $format
-                case 'zip' '7z'
+                case zip 7z
                     set suggestions "Check if archive is password-protected or corrupted"
                 case '*'
                     set suggestions "Check if archive is corrupted or format is unsupported"
@@ -451,12 +461,12 @@ function __fish_archive_handle_operation_error --description 'Handle operation e
         case '*'
             set suggestions "Check system resources and try again"
     end
-    
+
     __fish_archive_log error "$operation failed with error code $error_code"
     for detail in $details
         __fish_archive_log error $detail
     end
-    
+
     if test -n "$suggestions"
         __fish_archive_log info "Suggestions: $suggestions"
     end
@@ -477,22 +487,22 @@ end
 
 function __fish_archive_optimize_performance --description 'Optimize performance based on system capabilities'
     set -l file_size $argv[1]
-    set -l operation $argv[2]  # compress or extract
-    
+    set -l operation $argv[2] # compress or extract
+
     # Check for parallel tools
     set -l has_pigz (__fish_archive_has_command pigz; and echo 1; or echo 0)
     set -l has_pbzip2 (__fish_archive_has_command pbzip2; and echo 1; or echo 0)
     set -l has_pv (__fish_archive_has_command pv; and echo 1; or echo 0)
-    
+
     # Optimize thread count
     set -l optimal_threads (__fish_archive_optimal_threads $file_size)
-    
+
     # Enable progress for large files
     set -l enable_progress 0
     if test $file_size -gt 10485760; and test $has_pv -eq 1
         set enable_progress 1
     end
-    
+
     echo "$optimal_threads $enable_progress $has_pigz $has_pbzip2 $has_pv"
 end
 
@@ -504,14 +514,14 @@ function __fish_archive_handle_destination_naming --description 'Handle destinat
     set -l base_dest $argv[1]
     set -l auto_rename $argv[2]
     set -l timestamp $argv[3]
-    
+
     set -l final_dest "$base_dest"
-    
+
     # Add timestamp if requested
     if test $timestamp -eq 1
         set final_dest "$base_dest-"(date +%Y%m%d_%H%M%S)
     end
-    
+
     # Handle auto-rename if destination exists
     if test $auto_rename -eq 1; and test -e "$final_dest"
         set -l counter 1
@@ -520,7 +530,7 @@ function __fish_archive_handle_destination_naming --description 'Handle destinat
         end
         set final_dest "$final_dest-$counter"
     end
-    
+
     echo $final_dest
 end
 
@@ -528,16 +538,16 @@ function __fish_archive_handle_output_naming --description 'Handle output file n
     set -l base_output $argv[1]
     set -l auto_rename $argv[2]
     set -l timestamp $argv[3]
-    
+
     set -l final_output "$base_output"
-    
+
     # Add timestamp if requested
     if test $timestamp -eq 1
         set -l basename (__fish_archive_basename_without_ext "$base_output")
         set -l extension (__fish_archive_get_extension "$base_output")
         set final_output "$basename-"(date +%Y%m%d_%H%M%S)"$extension"
     end
-    
+
     # Handle auto-rename if output exists
     if test $auto_rename -eq 1; and test -e "$final_output"
         set -l basename (__fish_archive_basename_without_ext "$final_output")
@@ -548,22 +558,22 @@ function __fish_archive_handle_output_naming --description 'Handle output file n
         end
         set final_output "$basename-$counter$extension"
     end
-    
+
     echo $final_output
 end
 
 function __fish_archive_generate_checksum --description 'Generate checksum file'
     set -l target $argv[1]
-    
+
     if test -f "$target"
         set -l sha256_hash (__fish_archive_calculate_hash "$target" "sha256")
         if test $status -eq 0
-            echo "$sha256_hash  "(basename "$target") > "$target.sha256"
+            echo "$sha256_hash  "(basename "$target") >"$target.sha256"
             __fish_archive_log info "Generated checksum: $target.sha256"
         end
     else if test -d "$target"
         # Generate checksum for directory contents
-        find "$target" -type f -exec sha256sum {} \; > "$target.sha256"
+        find "$target" -type f -exec sha256sum {} \; >"$target.sha256"
         __fish_archive_log info "Generated checksum: $target.sha256"
     end
 end
@@ -573,12 +583,12 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
     set -l quiet $argv[2]
     set -l fix $argv[3]
     set -l export $argv[4]
-    
+
     set -l report_file ""
     if test $export -eq 1
         set report_file "fish-archive-diagnostic-"(date +%Y%m%d_%H%M%S).txt
     end
-    
+
     # System information
     if test $verbose -eq 1; and test $quiet -eq 0
         __fish_archive_log info "=== Fish Archive Manager Diagnostic Report ==="
@@ -590,12 +600,12 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
         __fish_archive_log info "Date: "(date)
         echo ""
     end
-    
+
     # Check required tools
     __fish_archive_log info "=== Required Tools ==="
     set -l required_tools file tar gzip bzip2 xz unzip zip
     set -l missing_required
-    
+
     for tool in $required_tools
         if __fish_archive_has_command $tool
             __fish_archive_log info "✓ $tool"
@@ -604,12 +614,12 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
             set -a missing_required $tool
         end
     end
-    
+
     # Check important tools
     __fish_archive_log info "=== Important Tools ==="
     set -l important_tools 7z lz4 bsdtar
     set -l missing_important
-    
+
     for tool in $important_tools
         if __fish_archive_has_command $tool
             __fish_archive_log info "✓ $tool"
@@ -618,12 +628,12 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
             set -a missing_important $tool
         end
     end
-    
+
     # Check optional tools
     if test $verbose -eq 1
         __fish_archive_log info "=== Optional Tools ==="
         set -l optional_tools unrar pv lzip lzop brotli pigz pbzip2 pxz split
-        
+
         for tool in $optional_tools
             if __fish_archive_has_command $tool
                 __fish_archive_log info "✓ $tool"
@@ -632,28 +642,28 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
             end
         end
     end
-    
+
     # Configuration
     __fish_archive_log info "=== Configuration ==="
     __fish_archive_log info "Color: $FISH_ARCHIVE_COLOR"
     __fish_archive_log info "Progress: $FISH_ARCHIVE_PROGRESS"
     __fish_archive_log info "Default threads: $FISH_ARCHIVE_DEFAULT_THREADS"
     __fish_archive_log info "Log level: $FISH_ARCHIVE_LOG_LEVEL"
-    
+
     # Format support
     if test $verbose -eq 1
         __fish_archive_log info "=== Format Support ==="
         set -l formats tar.gz tar.bz2 tar.xz tar.zst tar.lz4 zip 7z rar
-        
+
         for format in $formats
-            if __fish_archive_validate_format_support "$format" "extract"
+            if __fish_archive_validate_format_support "$format" extract
                 __fish_archive_log info "✓ $format (extract)"
             else
                 __fish_archive_log warn "✗ $format (extract)"
             end
         end
     end
-    
+
     # Fix suggestions
     if test $fix -eq 1; and test (count $missing_required) -gt 0
         __fish_archive_log info "=== Installation Suggestions ==="
@@ -661,12 +671,12 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
         __fish_archive_log info "Ubuntu/Debian: sudo apt-get install "(string join ' ' $missing_required)
         __fish_archive_log info "macOS: brew install "(string join ' ' $missing_required)
     end
-    
+
     # Export report
     if test $export -eq 1
         __fish_archive_log info "=== Report exported to: $report_file ==="
     end
-    
+
     # Return status
     if test (count $missing_required) -gt 0
         return 1

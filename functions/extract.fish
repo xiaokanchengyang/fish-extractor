@@ -75,23 +75,23 @@ Examples:
     set -l options h/help d/dest= f/force s/strip= p/password= t/threads= q/quiet v/verbose k/keep
     set -l long_options no-progress list test verify overwrite flat dry-run backup checksum auto-rename timestamp preserve-perms no-preserve-perms
     argparse $options $long_options -- $argv
-    
+
     if test $status -ne 0
         echo $usage
         return 2
     end
-    
+
     # Handle help
     if set -q _flag_help
         echo $usage
         return 0
     end
-    
+
     # Check Fish compatibility
     __fish_archive_ensure_fish_compatibility; or begin
         __fish_archive_log warn "Continuing with limited functionality"
     end
-    
+
     # Set defaults
     set -l dest ""
     set -l force 0
@@ -112,80 +112,80 @@ Examples:
     set -l auto_rename 0
     set -l timestamp 0
     set -l preserve_perms 1
-    
+
     # Process flags
     if set -q _flag_dest
         set dest "$_flag_dest"
     end
-    
+
     if set -q _flag_force; or set -q _flag_overwrite
         set force 1
     end
-    
+
     if set -q _flag_strip
         set strip "$_flag_strip"
     end
-    
+
     if set -q _flag_password
         set password "$_flag_password"
     end
-    
+
     if set -q _flag_quiet
         set quiet 1
     end
-    
+
     if set -q _flag_verbose
         set verbose 1
     end
-    
+
     if set -q _flag_keep
         set keep 1
     end
-    
+
     if set -q _flag_no_progress
         set no_progress 1
     end
-    
+
     if set -q _flag_list
         set list_only 1
     end
-    
+
     if set -q _flag_test
         set test_only 1
     end
-    
+
     if set -q _flag_verify
         set verify 1
     end
-    
+
     if set -q _flag_flat
         set flat 1
     end
-    
+
     if set -q _flag_dry_run
         set dry_run 1
     end
-    
+
     if set -q _flag_backup
         set backup 1
     end
-    
+
     if set -q _flag_checksum
         set checksum 1
     end
-    
+
     if set -q _flag_auto_rename
         set auto_rename 1
     end
-    
+
     if set -q _flag_timestamp
         set timestamp 1
     end
-    
+
     if set -q _flag_no_preserve_perms
         set preserve_perms 0
     end
-    
+
     # Get input files
     set -l input_files $argv
     if test (count $input_files) -eq 0
@@ -193,33 +193,33 @@ Examples:
         echo $usage
         return 2
     end
-    
+
     # Validate input files
     set -l valid_files (__fish_archive_validate_inputs $input_files)
     if test $status -ne 0
         return 1
     end
-    
+
     # Process each archive
     set -l success_count 0
     set -l total_count (count $valid_files)
     set -l start_time (date +%s)
-    
+
     for archive in $valid_files
         set -l archive_start (date +%s)
-        
+
         # Detect format
         set -l format (__fish_archive_detect_format "$archive")
-        if test "$format" = "unknown"
+        if test "$format" = unknown
             __fish_archive_log error "Unknown format: $archive"
             continue
         end
-        
+
         # Validate archive
         if not __fish_archive_validate_archive "$archive"
             continue
         end
-        
+
         # Handle special operations
         if test $list_only -eq 1
             __fish_archive_log info "Listing contents: $archive"
@@ -227,7 +227,7 @@ Examples:
             set success_count (math "$success_count + 1")
             continue
         end
-        
+
         if test $test_only -eq 1
             __fish_archive_log info "Testing integrity: $archive"
             if __fish_archive_test_archive_integrity "$archive" "$format"
@@ -238,17 +238,17 @@ Examples:
             end
             continue
         end
-        
+
         # Determine destination
         if test -z "$dest"
             set dest (__fish_archive_default_extract_dir "$archive")
         end
-        
+
         # Handle auto-rename and timestamp
         if test $auto_rename -eq 1; or test $timestamp -eq 1
             set dest (__fish_archive_handle_destination_naming "$dest" $auto_rename $timestamp)
         end
-        
+
         # Create destination directory
         if not test -d "$dest"
             mkdir -p "$dest" 2>/dev/null; or begin
@@ -256,7 +256,7 @@ Examples:
                 continue
             end
         end
-        
+
         # Handle backup
         if test $backup -eq 1; and test -d "$dest"
             set -l backup_name "$dest.backup."(date +%Y%m%d_%H%M%S)
@@ -264,7 +264,7 @@ Examples:
                 __fish_archive_log warn "Failed to create backup: $backup_name"
             end
         end
-        
+
         # Security Policy: Strict Path Traversal Protection
         # Verify archive members for unsafe paths before extraction
         if __fish_pack_verify_archive_members "$archive" "$format"
@@ -274,13 +274,13 @@ Examples:
             __fish_archive_log error "Archive contains unsafe paths (e.g. '../' or absolute paths). Skipping: $archive"
             continue
         end
-        
+
         # Prepare extraction arguments
         set -l extract_args (__fish_archive_prepare_extraction_args "$format" $threads "$password" $strip $flat $preserve_perms "$archive" "$dest")
         if test $status -ne 0
             continue
         end
-        
+
         # Execute extraction
         if test $dry_run -eq 1
             __fish_archive_log info "Would extract: $archive to $dest"
@@ -288,14 +288,14 @@ Examples:
             set success_count (math "$success_count + 1")
         else
             __fish_archive_log info "Extracting: $archive to $dest"
-            
+
             # Get file size for progress
             set -l file_size (__fish_archive_get_file_size "$archive")
             set -l progress_enabled 0
             if test $no_progress -eq 0; and test $file_size -gt 10485760
                 set progress_enabled 1
             end
-            
+
             # Execute with progress and measure
             set -l start_data (__fish_pack_start_measurement)
 
@@ -313,27 +313,27 @@ Examples:
             if test $cmd_status -eq 0
                 __fish_archive_log info "Successfully extracted: $archive"
                 set success_count (math "$success_count + 1")
-                
+
                 # Generate checksum if requested
                 if test $checksum -eq 1
                     __fish_archive_generate_checksum "$dest"
                 end
-                __fish_archive_show_operation_summary "extract" "$format" 1 $file_size $duration "$cpu_pct"
+                __fish_archive_show_operation_summary extract "$format" 1 $file_size $duration "$cpu_pct"
             else
                 __fish_archive_log error "Failed to extract: $archive"
             end
         end
-        
+
         # Clean up archive if not keeping
         if test $keep -eq 0; and test $dry_run -eq 0
             rm -f "$archive"
         end
     end
-    
+
     # Show summary
     set -l end_time (date +%s)
     set -l duration (math "$end_time - $start_time")
-    
+
     if test $success_count -eq $total_count
         __fish_archive_log info "All extractions completed successfully ($success_count/$total_count)"
         return 0

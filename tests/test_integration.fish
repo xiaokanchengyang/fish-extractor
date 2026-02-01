@@ -12,7 +12,7 @@ end
 
 # 2. Compress
 mkdir -p int_test_in
-echo "hello" > int_test_in/hello.txt
+echo hello >int_test_in/hello.txt
 if not compress -q int_test.tar.gz int_test_in/
     echo "✗ Integration: Compress failed"
     exit 1

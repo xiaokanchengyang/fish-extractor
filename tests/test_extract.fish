@@ -5,7 +5,7 @@ source functions/compress.fish
 
 # Prepare
 mkdir -p test_extract_dir
-echo "extract me" > test_extract_dir/file.txt
+echo "extract me" >test_extract_dir/file.txt
 compress -q test_archive.tar.gz test_extract_dir/
 
 # Test extraction

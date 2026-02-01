@@ -8,13 +8,13 @@ set -l failures 0
 function run_test
     set -l input $argv[1]
     set -l expected $argv[2] # 0 for unsafe, 1 for safe (based on function return)
-    
+
     if __fish_pack_is_unsafe_path "$input"
         set result 0
     else
         set result 1
     end
-    
+
     if test $result -eq $expected
         echo "PASS: '$input'"
     else
@@ -26,9 +26,9 @@ end
 echo "Testing __fish_pack_is_unsafe_path..."
 
 # Absolute paths (Unsafe -> 0)
-run_test "/etc/passwd" 0
-run_test "/absolute/path" 0
-run_test "/" 0
+run_test /etc/passwd 0
+run_test /absolute/path 0
+run_test / 0
 
 # Traversal paths (Unsafe -> 0)
 run_test "../outside" 0
@@ -44,7 +44,7 @@ run_test "safe..file" 1
 run_test "file..." 1
 run_test ".config" 1
 run_test "./current" 1
-run_test "a/b/c" 1
+run_test a/b/c 1
 run_test "folder.with.dots/file" 1
 
 if test $failures -gt 0

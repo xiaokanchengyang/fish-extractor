@@ -13,7 +13,7 @@ if __fish_pack_check_path_traversal "$malicious_file"
     echo "FAIL - Path traversal not detected"
     exit 1
 else
-    echo "PASS"
+    echo PASS
 end
 
 # Test 2: Secure temp file creation
@@ -21,8 +21,8 @@ echo -n "Test 2: Secure temp file creation... "
 set -l temp_file (__fish_pack_secure_temp_file "test")
 if test -f "$temp_file"
     set -l perms (stat -c %a "$temp_file" 2>/dev/null; or stat -f %p "$temp_file" | tail -c 4)
-    if test "$perms" = "600"
-        echo "PASS"
+    if test "$perms" = 600
+        echo PASS
         rm -f "$temp_file"
     else
         echo "FAIL - Wrong permissions: $perms"
@@ -39,8 +39,8 @@ echo -n "Test 3: Secure temp directory creation... "
 set -l temp_dir (__fish_pack_secure_temp_dir "test")
 if test -d "$temp_dir"
     set -l perms (stat -c %a "$temp_dir" 2>/dev/null; or stat -f %p "$temp_dir" | tail -c 4)
-    if test "$perms" = "700"
-        echo "PASS"
+    if test "$perms" = 700
+        echo PASS
         rmdir "$temp_dir"
     else
         echo "FAIL - Wrong permissions: $perms"
@@ -64,16 +64,16 @@ end
 # Test 5: Archive member validation
 echo -n "Test 5: Archive member validation... "
 # Create test archive with unsafe path
-echo "test" > normal.txt
+echo test >normal.txt
 mkdir -p subdir
-echo "test" > subdir/file.txt
+echo test >subdir/file.txt
 
 # Create tar with normal files
 tar -czf safe.tar.gz normal.txt subdir/file.txt
 
 # Test safe archive
 if __fish_pack_verify_archive_members safe.tar.gz tar.gz
-    echo "PASS"
+    echo PASS
 else
     echo "FAIL - Safe archive rejected"
     exit 1
@@ -89,7 +89,7 @@ set -l null_file (printf "file\0name")
 
 if __fish_pack_validate_filename "$safe_file"
     if not __fish_pack_validate_filename "$unsafe_file"
-        echo "PASS"
+        echo PASS
     else
         echo "FAIL - Unsafe filename not rejected"
         exit 1
@@ -103,7 +103,7 @@ end
 echo -n "Test 7: Safe command execution... "
 set -l output (__fish_pack_safe_exec echo "test output")
 if test "$output" = "test output"
-    echo "PASS"
+    echo PASS
 else
     echo "FAIL - Command execution failed"
     exit 1
@@ -112,10 +112,10 @@ end
 # Test 8: Special character handling
 echo -n "Test 8: Special character handling... "
 set -l special_file "file with spaces.txt"
-echo "test" > "$special_file"
+echo test >"$special_file"
 set -l quoted (__fish_pack_quote_filename "$special_file")
 if test -n "$quoted"
-    echo "PASS"
+    echo PASS
     rm -f "$special_file"
 else
     echo "FAIL - Quoting failed"

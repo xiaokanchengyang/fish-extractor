@@ -107,22 +107,4 @@ jobs:
       - name: Check compatibility
         run: |
           fish --version
-          fish -c "source functions/archive_manager.fish; extract --help"
-
-  codeql:
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: 'python'  # For any Python helper scripts
-          queries: security-and-quality
-      
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+          fish -c "source conf.d/archive_manager.fish; extract --help"

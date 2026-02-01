@@ -44,15 +44,15 @@ Examples:
 
     argparse -i \
         'parallel=' \
-        'sequential' \
-        'stop-on-error' \
+        sequential \
+        stop-on-error \
         'log-file=' \
         'lock-file=' \
         'timeout=' \
         'retry=' \
-        'dry-run' \
-        'verbose' \
-        'help' \
+        dry-run \
+        verbose \
+        help \
         -- $argv
     or begin
         echo $usage >&2
@@ -89,13 +89,13 @@ Examples:
     end
 
     # Set up logging
-    set -l log_fd 2  # Default to stderr
+    set -l log_fd 2 # Default to stderr
     if test -n "$log_file"
         if not touch "$log_file" 2>/dev/null
             echo "Cannot create log file: $log_file" >&2
             return 1
         end
-        exec 3> "$log_file"
+        exec 3>"$log_file"
         set log_fd 3
     end
 
@@ -119,7 +119,7 @@ Examples:
 
     for task in $tasks
         set task_index (math $task_index + 1)
-        
+
         # Parse task
         set -l parts (string split '::' -- $task)
         set -l kind $parts[1]
@@ -242,7 +242,7 @@ function _log_message --description 'Log message with timestamp'
     set -l message $argv[1]
     set -l log_fd $argv[2]
     set -l verbose $argv[3]
-    
+
     if test $verbose -eq 1; or test $log_fd -ne 2
         set -l timestamp (date '+%Y-%m-%d %H:%M:%S')
         echo "[$timestamp] $message" >&$log_fd
@@ -251,13 +251,13 @@ end
 
 function _acquire_lock --description 'Acquire lock file'
     set -l lock_file $argv[1]
-    
+
     # Create lock file with PID
-    echo $fish_pid > "$lock_file.lock" 2>/dev/null
+    echo $fish_pid >"$lock_file.lock" 2>/dev/null
     if test $status -ne 0
         return 1
     end
-    
+
     # Check if another process is using the lock
     if test -f "$lock_file"
         set -l lock_pid (cat "$lock_file" 2>/dev/null)
@@ -266,14 +266,14 @@ function _acquire_lock --description 'Acquire lock file'
             return 1
         end
     end
-    
+
     # Move lock file to final location
     mv "$lock_file.lock" "$lock_file" 2>/dev/null
     if test $status -ne 0
         rm -f "$lock_file.lock"
         return 1
     end
-    
+
     return 0
 end
 
@@ -291,26 +291,26 @@ function _execute_sequential_task --description 'Execute task sequentially'
     set -l log_fd $argv[6]
     set -l verbose $argv[7]
     set -l cmd $argv[8..-1]
-    
+
     set -l attempts 0
     set -l result 1
-    
+
     while test $attempts -le $retry_count
         set attempts (math $attempts + 1)
-        
+
         if test $attempts -gt 1
             _log_message "[$task_id/$total_tasks] Retry $attempts/$retry_count: $task_name" $log_fd 1
         end
-        
+
         # Execute with timeout if specified
         if test $timeout -gt 0
             timeout $timeout $cmd
         else
             $cmd
         end
-        
+
         set result $status
-        
+
         if test $result -eq 0
             _log_message "[$task_id/$total_tasks] Completed: $task_name" $log_fd $verbose
             break
@@ -318,6 +318,6 @@ function _execute_sequential_task --description 'Execute task sequentially'
             _log_message "[$task_id/$total_tasks] Failed: $task_name (exit code: $result, attempt: $attempts)" $log_fd 1
         end
     end
-    
+
     return $result
 end

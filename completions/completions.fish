@@ -27,10 +27,10 @@ end
 
 function complete_archive_files --description 'Complete archive file names'
     set -l exts '*.tar' '*.tar.gz' '*.tgz' '*.tar.bz2' '*.tbz2' '*.tar.xz' '*.txz' \
-                '*.tar.zst' '*.tzst' '*.tar.lz4' '*.tlz4' '*.tar.lz' '*.tlz' \
-                '*.zip' '*.7z' '*.rar' '*.gz' '*.bz2' '*.xz' '*.zst' '*.lz4' \
-                '*.iso' '*.deb' '*.rpm'
-    
+        '*.tar.zst' '*.tzst' '*.tar.lz4' '*.tlz4' '*.tar.lz' '*.tlz' \
+        '*.zip' '*.7z' '*.rar' '*.gz' '*.bz2' '*.xz' '*.zst' '*.lz4' \
+        '*.iso' '*.deb' '*.rpm'
+
     for ext in $exts
         __fish_complete_suffix $ext
     end

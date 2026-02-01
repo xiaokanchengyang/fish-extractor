@@ -3,7 +3,7 @@
 source functions/compress.fish
 
 # Create a dummy file
-echo "test data" > test_file.txt
+echo "test data" >test_file.txt
 
 # Test compression
 if compress -q test_file.tar.gz test_file.txt

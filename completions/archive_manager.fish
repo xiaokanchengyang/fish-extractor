@@ -75,7 +75,7 @@ complete -c doctor -n "not __fish_seen_subcommand_from --help" -l export -d "Exp
 complete -c archqueue -n "not __fish_seen_subcommand_from --help" -l parallel -r -d "Run N tasks in parallel"
 complete -c archqueue -n "not __fish_seen_subcommand_from --help" -l sequential -d "Run tasks sequentially"
 complete -c archqueue -n "not __fish_seen_subcommand_from --help" -l stop-on-error -d "Stop on first failure"
-complete -c archqueue -n "__fish_use_subcommand" -a "compress:: extract::" -d "Task kinds"
+complete -c archqueue -n __fish_use_subcommand -a "compress:: extract::" -d "Task kinds"
 
 # ============================================================================
 # Backward Compatibility Completions
@@ -162,11 +162,10 @@ end
 # Archive file completions
 function __fish_archive_complete_archive_files --description 'Complete archive file names'
     # Use modern Fish features for file completion
-    for file in *.tar.gz *.tgz *.tar.bz2 *.tbz2 *.tbz *.tar.xz *.txz *.tar.zst *.tzst *.tar.lz4 *.tlz4 *.zip *.7z *.rar 2>/dev/null
-        echo "$file"
-    end
+    for file in *.tar.gz *.tgz *.tar.bz2 *.tbz2 *.tbz *.tar.xz *.txz *.tar.zst *.tzst *.tar.lz4 *.tlz4 *.zip *.7z *.rar 2> /dev/null
+    echo "$file"
 end
-
+end
 # Apply dynamic completions
 complete -c compress -n "__fish_seen_subcommand_from -F --format" -a "(__fish_archive_complete_formats)"
 complete -c compressor -n "__fish_seen_subcommand_from -F --format" -a "(__fish_archive_complete_formats)"

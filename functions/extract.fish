@@ -1,19 +1,19 @@
 # Archive extraction command for Fish Archive Manager (fish 4.12+)
 # Supports intelligent format detection, multiple archives, progress indication, and comprehensive options
 
-# Load validation helpers
-source (dirname (status --current-filename))/validation.fish
-# Load format handlers
-source (dirname (status --current-filename))/format_handlers.fish
-# Load error handling
-source (dirname (status --current-filename))/error_handling.fish
-# Load common functions
-source (dirname (status --current-filename))/common/archive_operations.fish
-source (dirname (status --current-filename))/common/file_operations.fish
+# Load optimized common functions
+source (dirname (status --current-filename))/common/optimized_common.fish
+# Load secure execution functions
+source (dirname (status --current-filename))/common/safe_exec.fish
+# Load secure archive operations
+source (dirname (status --current-filename))/common/secure_archive_ops.fish
+# Load format operations
 source (dirname (status --current-filename))/common/format_operations.fish
+# Load performance utilities
+source (dirname (status --current-filename))/common/performance_utils.fish
 
-function extract --description 'Extract archives with smart detection and extensive format support'
-    set -l usage "\
+function extract --description 'Extract archives with intelligent format detection and modern Fish features'
+    set -l usage "
 extract - Intelligently extract archives with automatic format detection
 
 Usage: extract [OPTIONS] FILE...
@@ -49,236 +49,296 @@ Format Detection:
   - Fallback to bsdtar/7z for unknown formats
 
 Supported Formats:
-  - Compressed tar: .tar.gz, .tar.bz2, .tar.xz, .tar.zst, .tar.lz4, .tar.lz, .tar.lzo, .tar.br
-  - Archives: .zip, .7z, .rar
-  - Compressed files: .gz, .bz2, .xz, .zst, .lz4, .lz, .lzo, .br
-  - Disk images: .iso
-  - Package formats: .deb, .rpm (with bsdtar)
-  - And more via automatic fallback to bsdtar/7z
+  Compressed tar: .tar.gz, .tar.bz2, .tar.xz, .tar.zst, .tar.lz4, .tar.lz, .tar.lzo, .tar.br
+  Archives: .zip, .7z, .rar
+  Compressed files: .gz, .bz2, .xz, .zst, .lz4, .lz, .lzo, .br
+  Disk images: .iso
+  Package formats: .deb, .rpm (with bsdtar)
+  Short names: .tgz, .tbz2, .txz, .tzst, .tlz4
 
 Examples:
-  extract file.tar.gz                      # Extract to ./file/
-  extract -d output/ archive.zip           # Extract to ./output/
-  extract --strip 1 dist.tar.xz            # Strip top-level directory
-  extract -p secret encrypted.7z           # Extract encrypted archive
-  extract --list archive.zip               # List contents only
-  extract --test backup.tar.gz             # Test integrity
-  extract *.tar.gz                         # Extract multiple archives
-  extract --verify --checksum data.txz     # Verify and generate checksum
+  extract archive.tar.gz                    # Extract to ./archive/
+  extract -d output/ archive.zip            # Extract to ./output/
+  extract --strip 1 dist.tar.xz             # Remove top-level directory
+  extract -p secret encrypted.7z            # Extract with password
+  extract --list archive.zip                # Preview contents
+  extract --test backup.tar.gz              # Verify integrity
+  extract --verify data.tar.xz              # Check with checksum
+  extract *.tar.gz                          # Extract multiple archives
+  extract -t 16 large-archive.tar.zst       # Use 16 threads
+  extract --backup --force archive.zip      # Backup before extracting
+  extract --checksum important.txz          # Generate checksum
+  extract -v complicated.7z                 # Verbose output
 "
 
-    # Parse arguments
-    set -l dest ''
+    # Parse arguments with modern Fish features
+    set -l options h/help d/dest= f/force s/strip= p/password= t/threads= q/quiet v/verbose k/keep
+    set -l long_options no-progress list test verify overwrite flat dry-run backup checksum auto-rename timestamp preserve-perms no-preserve-perms
+    argparse $options $long_options -- $argv
+    
+    if test $status -ne 0
+        echo $usage
+        return 2
+    end
+    
+    # Handle help
+    if set -q _flag_help
+        echo $usage
+        return 0
+    end
+    
+    # Check Fish compatibility
+    __fish_archive_ensure_fish_compatibility; or begin
+        __fish_archive_log warn "Continuing with limited functionality"
+    end
+    
+    # Set defaults
+    set -l dest ""
     set -l force 0
     set -l strip 0
-    set -l password ''
-    set -l threads ''
+    set -l password ""
+    set -l threads (__fish_archive_resolve_threads "$_flag_threads")
     set -l quiet 0
     set -l verbose 0
     set -l keep 1
-    set -l show_progress 1
+    set -l no_progress 0
     set -l list_only 0
     set -l test_only 0
     set -l verify 0
     set -l flat 0
     set -l dry_run 0
     set -l backup 0
-    set -l gen_checksum 0
+    set -l checksum 0
     set -l auto_rename 0
-    set -l add_timestamp 0
+    set -l timestamp 0
     set -l preserve_perms 1
-
-    argparse -i \
-        'd/dest=' \
-        'f/force' \
-        's/strip=' \
-        'p/password=' \
-        't/threads=' \
-        'q/quiet' \
-        'v/verbose' \
-        'k/keep' \
-        'no-progress' \
-        'list' \
-        'test' \
-        'verify' \
-        'overwrite' \
-        'flat' \
-        'dry-run' \
-        'backup' \
-        'checksum' \
-        'auto-rename' \
-        'timestamp' \
-        'preserve-perms' \
-        'no-preserve-perms' \
-        'h/help' \
-        -- $argv
-    or begin
-        echo $usage >&2
+    
+    # Process flags
+    if set -q _flag_dest
+        set dest "$_flag_dest"
+    end
+    
+    if set -q _flag_force; or set -q _flag_overwrite
+        set force 1
+    end
+    
+    if set -q _flag_strip
+        set strip "$_flag_strip"
+    end
+    
+    if set -q _flag_password
+        set password "$_flag_password"
+    end
+    
+    if set -q _flag_quiet
+        set quiet 1
+    end
+    
+    if set -q _flag_verbose
+        set verbose 1
+    end
+    
+    if set -q _flag_keep
+        set keep 1
+    end
+    
+    if set -q _flag_no_progress
+        set no_progress 1
+    end
+    
+    if set -q _flag_list
+        set list_only 1
+    end
+    
+    if set -q _flag_test
+        set test_only 1
+    end
+    
+    if set -q _flag_verify
+        set verify 1
+    end
+    
+    if set -q _flag_flat
+        set flat 1
+    end
+    
+    if set -q _flag_dry_run
+        set dry_run 1
+    end
+    
+    if set -q _flag_backup
+        set backup 1
+    end
+    
+    if set -q _flag_checksum
+        set checksum 1
+    end
+    
+    if set -q _flag_auto_rename
+        set auto_rename 1
+    end
+    
+    if set -q _flag_timestamp
+        set timestamp 1
+    end
+    
+    if set -q _flag_no_preserve_perms
+        set preserve_perms 0
+    end
+    
+    # Get input files
+    set -l input_files $argv
+    if test (count $input_files) -eq 0
+        __fish_archive_log error "No input files specified"
+        echo $usage
         return 2
     end
-
-    # Handle flags
-    set -q _flag_help; and echo $usage; and return 0
-    set -q _flag_dest; and set dest (sanitize_path $_flag_dest)
-    set -q _flag_force; and set force 1
-    set -q _flag_overwrite; and set force 1
-    set -q _flag_strip; and set strip $_flag_strip
-    set -q _flag_password; and set password $_flag_password
-    set -q _flag_threads; and set threads $_flag_threads
-    set -q _flag_quiet; and set quiet 1
-    set -q _flag_verbose; and set verbose 1
-    set -q _flag_keep; and set keep 1
-    set -q _flag_no_progress; and set show_progress 0
-    set -q _flag_list; and set list_only 1
-    set -q _flag_test; and set test_only 1
-    set -q _flag_verify; and set verify 1
-    set -q _flag_flat; and set flat 1
-    set -q _flag_dry_run; and set dry_run 1
-    set -q _flag_backup; and set backup 1
-    set -q _flag_checksum; and set gen_checksum 1
-    set -q _flag_auto_rename; and set auto_rename 1
-    set -q _flag_timestamp; and set add_timestamp 1
-    set -q _flag_no_preserve_perms; and set preserve_perms 0
-
-    # Validate arguments
-    set -l files $argv
-    if test (count $files) -eq 0
-        log error "No archive files specified"
-        echo $usage >&2
-        return 2
+    
+    # Validate input files
+    set -l valid_files (__fish_archive_validate_inputs $input_files)
+    if test $status -ne 0
+        return 1
     end
-
-    # Verify basic tools
-    require_commands file tar
-    or return 127
-
-    # Resolve thread count
-    set -l thread_count (resolve_threads $threads)
-
+    
     # Process each archive
     set -l success_count 0
-    set -l fail_count 0
-    set -l total_archives (count $files)
-
-    # Show summary header for multiple files
-    if test $quiet -eq 0; and test $total_archives -gt 1
-        log info "Processing $total_archives archive(s)..."
-        echo ""
-    end
-
-    for archive in $files
-        # Validate and normalize path
-        set -l archive_path (sanitize_path $archive)
+    set -l total_count (count $valid_files)
+    set -l start_time (date +%s)
+    
+    for archive in $valid_files
+        set -l archive_start (date +%s)
         
-        if not validate_archive "$archive_path"
-            set fail_count (math $fail_count + 1)
-            continue
-        end
-
         # Detect format
-        set -l format (detect_archive_format "$archive_path")
+        set -l format (__fish_archive_detect_format "$archive")
         if test "$format" = "unknown"
-            log warn "Unknown format for $archive, attempting automatic detection"
-        end
-
-        # Get file size for optimization
-        set -l file_size (get_file_size "$archive_path")
-
-        # Determine extraction directory
-        set -l extract_dir (generate_extract_directory "$archive_path" $dest $auto_rename $add_timestamp)
-
-    # Handle different operation modes
-    if test $list_only -eq 1
-        list_format_contents "$archive_path" $format
-        set -l status_code $status
-        if test $status_code -eq 0
-            set success_count (math $success_count + 1)
-        else
-            set fail_count (math $fail_count + 1)
-        end
-        continue
-    end
-    
-    if test $test_only -eq 1
-        test_format_integrity "$archive_path" $format
-        set -l status_code $status
-        if test $status_code -eq 0
-            set success_count (math $success_count + 1)
-            test $quiet -eq 0; and colorize green "✓ $archive: OK\n"
-        else
-            set fail_count (math $fail_count + 1)
-            colorize red "✗ $archive: FAILED\n"
-        end
-        continue
-    end
-    
-    if test $verify -eq 1
-        if not verify_checksum_file "$archive_path" "sha256"
-            log warn "Verification failed for $archive"
-            set fail_count (math $fail_count + 1)
+            __fish_archive_log error "Unknown format: $archive"
             continue
         end
-    end
-
-        # Dry run mode
-        if test $dry_run -eq 1
-            log info "[DRY-RUN] Would extract: $archive_path → $extract_dir"
-            log info "[DRY-RUN] Format: $format, Size: "(human_size $file_size)
+        
+        # Validate archive
+        if not __fish_archive_validate_archive "$archive"
             continue
         end
-
-        # Prepare extraction directory
-        if not prepare_extraction_directory "$extract_dir" $force $backup $quiet
-            set fail_count (math $fail_count + 1)
+        
+        # Handle special operations
+        if test $list_only -eq 1
+            __fish_archive_log info "Listing contents: $archive"
+            __fish_archive_list_archive_contents "$archive" "$format"
+            set success_count (math "$success_count + 1")
             continue
         end
-
-        # Show file info
-        show_operation_progress "Extracting" $archive $format $file_size $verbose $quiet $success_count $total_archives
-        if should_show_verbose $verbose $quiet
-            log debug "  Destination: $extract_dir"
-            log debug "  Threads: $thread_count"
-        end
-
-        # Perform extraction
-        if execute_format_command $format "extract" "$archive_path" "$extract_dir" $strip "$password" $thread_count $show_progress $verbose $flat
-            set success_count (math $success_count + 1)
-            test $quiet -eq 0; and colorize green "✓ Extracted: $archive\n"
-            
-            # Generate checksum if requested
-            if test $gen_checksum -eq 1
-                generate_checksum_file "$extract_dir" "sha256" $quiet
+        
+        if test $test_only -eq 1
+            __fish_archive_log info "Testing integrity: $archive"
+            if __fish_archive_test_archive_integrity "$archive" "$format"
+                __fish_archive_log info "Archive is valid: $archive"
+                set success_count (math "$success_count + 1")
+            else
+                __fish_archive_log error "Archive is corrupted: $archive"
             end
+            continue
+        end
+        
+        # Determine destination
+        if test -z "$dest"
+            set dest (__fish_archive_default_extract_dir "$archive")
+        end
+        
+        # Handle auto-rename and timestamp
+        if test $auto_rename -eq 1; or test $timestamp -eq 1
+            set dest (__fish_archive_handle_destination_naming "$dest" $auto_rename $timestamp)
+        end
+        
+        # Create destination directory
+        if not test -d "$dest"
+            mkdir -p "$dest" 2>/dev/null; or begin
+                __fish_archive_log error "Failed to create directory: $dest"
+                continue
+            end
+        end
+        
+        # Handle backup
+        if test $backup -eq 1; and test -d "$dest"
+            set -l backup_name "$dest.backup."(date +%Y%m%d_%H%M%S)
+            mv "$dest" "$backup_name" 2>/dev/null; or begin
+                __fish_archive_log warn "Failed to create backup: $backup_name"
+            end
+        end
+        
+        # Security Policy: Strict Path Traversal Protection
+        # Verify archive members for unsafe paths before extraction
+        if __fish_pack_verify_archive_members "$archive" "$format"
+            # Safe to proceed
         else
-            set fail_count (math $fail_count + 1)
-            log error "Extraction failed: $archive"
+            # Unsafe paths detected
+            __fish_archive_log error "Archive contains unsafe paths (e.g. '../' or absolute paths). Skipping: $archive"
+            continue
+        end
+        
+        # Prepare extraction arguments
+        set -l extract_args (__fish_archive_prepare_extraction_args "$format" $threads "$password" $strip $flat $preserve_perms "$archive" "$dest")
+        if test $status -ne 0
+            continue
+        end
+        
+        # Execute extraction
+        if test $dry_run -eq 1
+            __fish_archive_log info "Would extract: $archive to $dest"
+            __fish_archive_log info "Command: "(string join ' ' $extract_args)
+            set success_count (math "$success_count + 1")
+        else
+            __fish_archive_log info "Extracting: $archive to $dest"
+            
+            # Get file size for progress
+            set -l file_size (__fish_archive_get_file_size "$archive")
+            set -l progress_enabled 0
+            if test $no_progress -eq 0; and test $file_size -gt 10485760
+                set progress_enabled 1
+            end
+            
+            # Execute with progress and measure
+            set -l start_data (__fish_pack_start_measurement)
+
+            if test $progress_enabled -eq 1
+                __fish_pack_exec_with_progress $extract_args $file_size
+            else
+                __fish_pack_safe_exec $extract_args
+            end
+
+            set -l cmd_status $status
+            set -l perf_data (__fish_pack_end_measurement "$start_data")
+            set -l duration (echo $perf_data | cut -d' ' -f1)
+            set -l cpu_pct (echo $perf_data | cut -d' ' -f2)
+
+            if test $cmd_status -eq 0
+                __fish_archive_log info "Successfully extracted: $archive"
+                set success_count (math "$success_count + 1")
+                
+                # Generate checksum if requested
+                if test $checksum -eq 1
+                    __fish_archive_generate_checksum "$dest"
+                end
+                __fish_archive_show_operation_summary "extract" "$format" 1 $file_size $duration "$cpu_pct"
+            else
+                __fish_archive_log error "Failed to extract: $archive"
+            end
+        end
+        
+        # Clean up archive if not keeping
+        if test $keep -eq 0; and test $dry_run -eq 0
+            rm -f "$archive"
         end
     end
-
-    # Summary
-    show_operation_summary "extraction" $success_count $fail_count $total_archives $quiet
-
-    # Return appropriate exit code
-    test $fail_count -eq 0
+    
+    # Show summary
+    set -l end_time (date +%s)
+    set -l duration (math "$end_time - $start_time")
+    
+    if test $success_count -eq $total_count
+        __fish_archive_log info "All extractions completed successfully ($success_count/$total_count)"
+        return 0
+    else
+        __fish_archive_log warn "Some extractions failed ($success_count/$total_count)"
+        return 1
+    end
 end
-
-# ============================================================================
-# Internal: Archive Extraction Logic
-# ============================================================================
-
-# Note: Archive extraction logic is now handled by common functions
-# in functions/common/format_operations.fish
-
-# ============================================================================
-# Format-Specific Extraction Functions
-# ============================================================================
-
-# Note: Format-specific extraction functions are now handled by common functions
-# in functions/common/format_operations.fish
-
-# ============================================================================
-# Archive Listing and Testing
-# ============================================================================
-
-# Note: Archive listing and testing functions are now handled by common functions
-# in functions/common/format_operations.fish

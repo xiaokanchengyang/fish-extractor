@@ -69,9 +69,9 @@ function __fish_pack_measure_operation --description 'Measure operation performa
     
     # Log performance
     if test -n "$cpu_pct"
-        __fish_archive_log debug "$operation_name completed in ${duration}s (CPU: ${cpu_pct}%)"
+        __fish_archive_log debug "$operation_name completed in "$duration"s (CPU: "$cpu_pct"%)"
     else
-        __fish_archive_log debug "$operation_name completed in ${duration}s"
+        __fish_archive_log debug "$operation_name completed in "$duration"s"
     end
     
     return $result
@@ -175,15 +175,15 @@ function __fish_pack_format_duration --description 'Format duration in human-rea
     set -l seconds $argv[1]
     
     if test $seconds -lt 60
-        echo "${seconds}s"
+        echo "$seconds"s
     else if test $seconds -lt 3600
         set -l minutes (math -s0 "$seconds / 60")
         set -l remaining (math "$seconds % 60")
-        echo "${minutes}m ${remaining}s"
+        echo "$minutes"m "$remaining"s
     else
         set -l hours (math -s0 "$seconds / 3600")
         set -l minutes (math -s0 "($seconds % 3600) / 60")
-        echo "${hours}h ${minutes}m"
+        echo "$hours"h "$minutes"m
     end
 end
 

@@ -38,164 +38,66 @@ end
 function __fish_pack_cleanup_temp --description 'Securely clean up temporary files/directories'
     for item in $argv
         if test -e "$item"
-            if test -d "$item"
-                rm -rf -- "$item" 2>/dev/null
-            else
-                # Overwrite file content before deletion for security
-                if test -w "$item"
-                    dd if=/dev/urandom of="$item" bs=1024 count=1 2>/dev/null
-                end
-                rm -f -- "$item" 2>/dev/null
-            end
+            rm -rf -- "$item" 2>/dev/null
         end
     end
 end
 
-function __fish_pack_check_path_traversal --description 'Check for path traversal attempts'
+function __fish_pack_is_unsafe_path --description 'Check if path is unsafe (path traversal or absolute)'
     set -l path $argv[1]
     
-    # Check for dangerous patterns
-    if string match -q '*../*' -- "$path"; or string match -q '*..*' -- "$path"
-        return 1
+    # Check for leading slash (absolute path) using regex for precision
+    if string match -qr '^/' -- "$path"
+        return 0 # True, it is unsafe
     end
     
-    # Check for absolute paths when they shouldn't be allowed
-    if string match -q '/*' -- "$path"; and not set -q argv[2]
-        return 1
+    # Check for directory traversal segments (..)
+    # Matches: beginning or / followed by .. followed by / or end
+    if string match -qr '(^|/)\.\.(/|$)' -- "$path"
+        return 0 # True, it is unsafe
     end
     
-    return 0
+    return 1 # False, it is safe
 end
 
-function __fish_pack_sanitize_archive_member --description 'Sanitize archive member path'
-    set -l member $argv[1]
-    set -l base_dir $argv[2]
+function __fish_pack_list_archive_members --description 'List archive members for verification'
+    set -l archive $argv[1]
+    set -l format $argv[2]
     
-    # Remove leading slashes
-    set member (string replace -r '^/+' '' -- "$member")
-    
-    # Remove ../ sequences
-    set member (string replace -r '\.\./+' '' -- "$member")
-    
-    # Ensure path doesn't escape base directory
-    if test -n "$base_dir"
-        set -l resolved (realpath -m "$base_dir/$member" 2>/dev/null)
-        set -l base_resolved (realpath "$base_dir" 2>/dev/null)
-        
-        if not string match -q "$base_resolved/*" -- "$resolved"
+    switch $format
+        case 'tar' 'tar.gz' 'tgz' 'tar.bz2' 'tbz2' 'tar.xz' 'txz' 'tar.zst' 'tzst' 'tar.lz4' 'tlz4'
+            tar -tf "$archive" 2>/dev/null
+            
+        case 'zip'
+            # Use zipinfo for simple listing if available
+            if command -q zipinfo
+                unzip -Z -1 "$archive" 2>/dev/null
+            else
+                # Fallback: Parse unzip -l output using fish string builtins
+                # Matches standard line: "    123  2023-01-01 12:00   filename"
+                unzip -l "$archive" 2>/dev/null | string match -r '^\s*[0-9]+\s+[0-9-]+\s+[0-9:]+\s+(.*)$' | string replace -r '^\s*[0-9]+\s+[0-9-]+\s+[0-9:]+\s+' ''
+            end
+            
+        case '7z'
+            # 7z l -slt outputs detailed info. We grep Path = 
+            7z l -ba -slt "$archive" 2>/dev/null | string match -r '^Path = (.*)' | string replace -r '^Path = ' ''
+            
+        case '*'
             return 1
-        end
     end
-    
-    echo $member
-    return 0
 end
 
 function __fish_pack_verify_archive_members --description 'Verify all archive members are safe'
     set -l archive $argv[1]
     set -l format $argv[2]
     
-    set -l unsafe_members
+    set -l members (__fish_pack_list_archive_members "$archive" "$format")
     
-    switch $format
-        case 'tar' 'tar.gz' 'tgz' 'tar.bz2' 'tbz2' 'tar.xz' 'txz' 'tar.zst' 'tzst' 'tar.lz4' 'tlz4'
-            # List tar members
-            set -l members (tar -tf "$archive" 2>/dev/null)
-            for member in $members
-                if not __fish_pack_check_path_traversal "$member"
-                    set -a unsafe_members "$member"
-                end
-            end
-            
-        case 'zip'
-            # List zip members
-            set -l members (unzip -l "$archive" 2>/dev/null | awk 'NR>3 && NF>3 {print $NF}')
-            for member in $members
-                if not __fish_pack_check_path_traversal "$member"
-                    set -a unsafe_members "$member"
-                end
-            end
-            
-        case '7z'
-            # List 7z members
-            set -l members (7z l -slt "$archive" 2>/dev/null | grep "^Path = " | cut -d' ' -f3-)
-            for member in $members
-                if not __fish_pack_check_path_traversal "$member"
-                    set -a unsafe_members "$member"
-                end
-            end
-    end
-    
-    if test (count $unsafe_members) -gt 0
-        __fish_archive_log error "Archive contains unsafe paths:"
-        for member in $unsafe_members
-            __fish_archive_log error "  - $member"
+    for member in $members
+        if __fish_pack_is_unsafe_path "$member"
+            return 1 # Found unsafe path
         end
-        return 1
     end
     
-    return 0
-end
-
-function __fish_pack_secure_command --description 'Build secure command avoiding shell injection'
-    # This function helps build commands safely without using eval
-    # It returns a properly escaped command string
-    
-    set -l cmd $argv[1]
-    set -l args $argv[2..-1]
-    
-    # Ensure command exists
-    if not command -q "$cmd"
-        return 1
-    end
-    
-    # Build command with proper quoting
-    set -l safe_args
-    for arg in $args
-        # Escape special characters
-        set -l escaped (string escape -- "$arg")
-        set -a safe_args "$escaped"
-    end
-    
-    # Return the command and arguments as separate items
-    echo "$cmd"
-    for arg in $safe_args
-        echo "$arg"
-    end
-end
-
-function __fish_pack_handle_password --description 'Handle password for archives securely'
-    set -l format $argv[1]
-    set -l password $argv[2]
-    set -l operation $argv[3] # 'compress' or 'extract'
-    
-    # If no password provided, return empty
-    if test -z "$password"
-        return 0
-    end
-    
-    # Different formats handle passwords differently
-    switch $format
-        case 'zip'
-            if test "$operation" = "compress"
-                # For zip compression, we need to use stdin
-                # Create a temporary file with restricted permissions
-                set -l pass_file (__fish_pack_secure_temp_file "zip-pass")
-                echo "$password" > "$pass_file"
-                echo "--password-file=$pass_file"
-                # Caller must clean up the temp file
-            else
-                # For extraction, use -P
-                echo "-P"
-                echo "$password"
-            end
-            
-        case '7z'
-            # 7z uses -p flag directly
-            echo "-p$password"
-            
-        case '*'
-            # Other formats don't support passwords
-            return 1
-    end
+    return 0 # All safe
 end

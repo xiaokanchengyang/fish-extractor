@@ -31,7 +31,7 @@ We welcome feature suggestions! Please:
 
 1. **Fork and Clone**
    ```fish
-   git clone https://github.com/xiaokanchengyang/fish-extractor.git
+   git clone https://github.com/xiaokanchengyang/fish-pack.git
    cd archivist
    ```
 
@@ -311,7 +311,7 @@ fisher install .
 source ~/.config/fish/conf.d/archive_manager.fish
 
 # Uninstall
-fisher remove xiaokanchengyang/fish-extractor
+fisher remove xiaokanchengyang/fish-pack
 ```
 
 ### Performance Profiling

@@ -65,7 +65,7 @@ sudo apt-get update
 sudo apt-get install -y file tar gzip bzip2 xz-utils zstd lz4 lzip lzop brotli zip unzip p7zip-full p7zip-rar unrar-free pigz pbzip2 pxz pv bsdtar fish
 
 # Install Fish Archive Manager in WSL
-fisher install xiaokanchengyang/fish-extractor
+fisher install xiaokanchengyang/fish-pack
 ```
 
 #### Option B: Native Windows
@@ -113,7 +113,7 @@ pacman -S file tar gzip bzip2 xz zstd lz4 lzip lzop brotli zip unzip p7zip lz4 b
 
 2. **Install Archivist**:
    ```fish
-   fisher install xiaokanchengyang/fish-extractor
+   fisher install xiaokanchengyang/fish-pack
    ```
 
 3. **Verify Installation**:
@@ -123,19 +123,19 @@ pacman -S file tar gzip bzip2 xz zstd lz4 lzip lzop brotli zip unzip p7zip lz4 b
 
 4. **Update** (when new version available):
    ```fish
-   fisher update xiaokanchengyang/fish-extractor
+   fisher update xiaokanchengyang/fish-pack
    ```
 
 5. **Uninstall**:
    ```fish
-   fisher remove xiaokanchengyang/fish-extractor
+   fisher remove xiaokanchengyang/fish-pack
    ```
 
 ### Method 2: Manual Installation
 
 1. **Clone the repository**:
    ```fish
-   git clone https://github.com/xiaokanchengyang/fish-extractor.git ~/.config/fish/plugins/archivist
+   git clone https://github.com/xiaokanchengyang/fish-pack.git ~/.config/fish/plugins/archivist
    ```
 
 2. **Create symbolic links**:
@@ -351,7 +351,7 @@ archx is a function with definition
 
 ### With Fisher
 ```fish
-fisher update xiaokanchengyang/fish-extractor
+fisher update xiaokanchengyang/fish-pack
 ```
 
 ### Manual Installation
@@ -365,7 +365,7 @@ source ~/.config/fish/config.fish
 
 ### With Fisher
 ```fish
-fisher remove xiaokanchengyang/fish-extractor
+fisher remove xiaokanchengyang/fish-pack
 ```
 
 ### Manual Installation

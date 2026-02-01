@@ -37,7 +37,7 @@ function detect_archive_format --description 'Detect archive format with fallbac
     return 1
 end
 
-function validate_format_support --description 'Validate format is supported for operation'
+function __fish_archive_validate_format_support --description 'Validate format is supported for operation'
     set -l format $argv[1]
     set -l operation $argv[2]  # compress or extract
     

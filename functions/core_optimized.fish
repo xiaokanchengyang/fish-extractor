@@ -14,11 +14,11 @@ function __fish_archive_version --description 'Get Fish Archive Manager version'
 end
 
 function __fish_archive_is_fish_4_12_plus --description 'Check if Fish version is 4.12 or higher'
-    set -l version (fish --version | string match -r '\d+\.\d+')
-    set -l major (string split . -- $version)[1]
-    set -l minor (string split . -- $version)[2]
+    set -l fish_ver (fish --version | string match -r '\d+\.\d+')
+    set -l major (string split . -- $fish_ver)[1]
+    set -l minor (string split . -- $fish_ver)[2]
     
-    test $major -gt 4; or (test $major -eq 4; and test $minor -ge 12)
+    test $major -gt 4; or begin; test $major -eq 4; and test $minor -ge 12; end
 end
 
 # ============================================================================
@@ -62,15 +62,15 @@ function __fish_archive_log --description 'Structured logging with levels and mo
     set -l current_level (string lower -- $FISH_ARCHIVE_LOG_LEVEL)
     
     # Find current level index
-    set -l idx_current (string match -n -- $current_level $levels | head -1)
+    set -l idx_current (contains -i -- $current_level $levels)
     or set idx_current 2  # Default to info
     
     # Find message level index
-    set -l idx_message (string match -n -- $level $levels | head -1)
+    set -l idx_message (contains -i -- $level $levels)
     or set idx_message 2
     
     # Skip if message level is below current log level
-    test $idx_message -lt $idx_current; and return
+    test "$idx_message" -lt "$idx_current"; and return
     
     # Color mapping using modern Fish features
     set -l color_map debug=cyan info=green warn=yellow error=red
@@ -310,7 +310,7 @@ function __fish_archive_human_size --description 'Convert bytes to human-readabl
     set -l bytes $argv[1]
     
     if test $bytes -lt 1024
-        echo "${bytes}B"
+        echo "$bytes"B
     else if test $bytes -lt 1048576
         echo (math -s1 "$bytes / 1024")"KB"
     else if test $bytes -lt 1073741824
@@ -540,7 +540,7 @@ function __fish_archive_smart_format --description 'Choose optimal compression f
     end
 
     # Content-based selection
-    if test (math "$text_ratio >= 70") -eq 1
+    if test "$text_ratio" -ge 70
         echo "tar.xz"  # Maximum compression for text
         return
     end
@@ -550,7 +550,7 @@ function __fish_archive_smart_format --description 'Choose optimal compression f
         return
     end
 
-    if test (math "$text_ratio >= 30") -eq 1
+    if test "$text_ratio" -ge 30
         echo "tar.gz"  # Balanced compression
         return
     end

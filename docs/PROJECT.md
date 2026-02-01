@@ -2,7 +2,7 @@
 
 [![Fish Shell](https://img.shields.io/badge/fish-4.12%2B-blue)](https://fishshell.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-extractor)
+[![Version](https://img.shields.io/badge/version-3.0.0-green.svg)](https://github.com/xiaokanchengyang/fish-pack)
 
 **Fish Archive Manager** is a professional-grade archive management tool for the [fish shell](https://fishshell.com/). It provides powerful, intuitive commands for extracting and compressing archives with smart format detection, parallel processing, and comprehensive options.
 
@@ -73,16 +73,16 @@ brew install unrar pv lzip lzop brotli pigz pbzip2  # macOS
 ### Using [Fisher](https://github.com/jorgebucaran/fisher) (Recommended)
 
 ```fish
-fisher install xiaokanchengyang/fish-extractor
+fisher install xiaokanchengyang/fish-pack
 ```
 
 ### Manual Installation
 
 ```fish
-git clone https://github.com/xiaokanchengyang/fish-extractor ~/.config/fish/fish-extractor
-ln -sf ~/.config/fish/fish-extractor/functions/*.fish ~/.config/fish/functions/
-ln -sf ~/.config/fish/fish-extractor/completions/*.fish ~/.config/fish/completions/
-ln -sf ~/.config/fish/fish-extractor/conf.d/*.fish ~/.config/fish/conf.d/
+git clone https://github.com/xiaokanchengyang/fish-pack ~/.config/fish/fish-pack
+ln -sf ~/.config/fish/fish-pack/functions/*.fish ~/.config/fish/functions/
+ln -sf ~/.config/fish/fish-pack/completions/*.fish ~/.config/fish/completions/
+ln -sf ~/.config/fish/fish-pack/conf.d/*.fish ~/.config/fish/conf.d/
 ```
 
 ### Verify Installation

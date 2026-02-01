@@ -74,22 +74,22 @@ brew install unrar pv lzip lzop brotli pigz pbzip2  # macOS
 ### 使用 [Fisher](https://github.com/jorgebucaran/fisher) (推荐)
 
 ```fish
-fisher install xiaokanchengyang/fish-extractor
+fisher install xiaokanchengyang/fish-pack
 ```
 
 ### 手动安装
 
 ```fish
-git clone https://github.com/xiaokanchengyang/fish-extractor ~/.config/fish/fish-extractor
-ln -sf ~/.config/fish/fish-extractor/functions/*.fish ~/.config/fish/functions/
-ln -sf ~/.config/fish/fish-extractor/completions/*.fish ~/.config/fish/completions/
-ln -sf ~/.config/fish/fish-extractor/conf.d/*.fish ~/.config/fish/conf.d/
+git clone https://github.com/xiaokanchengyang/fish-pack ~/.config/fish/fish-pack
+ln -sf ~/.config/fish/fish-pack/functions/*.fish ~/.config/fish/functions/
+ln -sf ~/.config/fish/fish-pack/completions/*.fish ~/.config/fish/completions/
+ln -sf ~/.config/fish/fish-pack/conf.d/*.fish ~/.config/fish/conf.d/
 ```
 
 ### 验证安装
 
 ```fish
-doctor
+check
 ```
 
 ## 📖 使用方法

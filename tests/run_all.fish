@@ -1,7 +1,13 @@
 # Master test runner for Fish Archive Manager
 # Run with: fish tests/run_all.fish
 
-set -l test_dir (dirname (status --current-filename))
+set -l current_file (status --current-filename)
+if test -z "$current_file"
+    set current_file "tests/run_all.fish"
+end
+set -g test_dir (dirname (realpath "$current_file"))
+echo "DEBUG: current_file=$current_file"
+echo "DEBUG: test_dir=$test_dir"
 set -l original_pwd (pwd)
 
 function run_test_suite
@@ -71,6 +77,11 @@ function run_all_tests
     # Run security tests
     set total_suites (math $total_suites + 1)
     run_test_suite "$test_dir/test_security.fish" "Security"
+    or set failed_suites (math $failed_suites + 1)
+    
+    # Run archqueue tests
+    set total_suites (math $total_suites + 1)
+    run_test_suite "$test_dir/test_archqueue.fish" "Archqueue"
     or set failed_suites (math $failed_suites + 1)
     
     # Run integration tests

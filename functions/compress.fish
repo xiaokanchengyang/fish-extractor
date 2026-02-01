@@ -1,18 +1,18 @@
 # Archive compression command for Fish Archive Manager (fish 4.12+)
 # Supports smart format selection, multiple compression algorithms, and comprehensive options
 
-# Load validation helpers
-source (dirname (status --current-filename))/validation.fish
-# Load format handlers
-source (dirname (status --current-filename))/format_handlers.fish
-# Load error handling
-source (dirname (status --current-filename))/error_handling.fish
-# Load common functions
-source (dirname (status --current-filename))/common/archive_operations.fish
-source (dirname (status --current-filename))/common/file_operations.fish
+# Load optimized common functions
+source (dirname (status --current-filename))/common/optimized_common.fish
+# Load secure execution functions
+source (dirname (status --current-filename))/common/safe_exec.fish
+# Load secure archive operations
+source (dirname (status --current-filename))/common/secure_archive_ops.fish
+# Load format operations
 source (dirname (status --current-filename))/common/format_operations.fish
+# Load performance utilities
+source (dirname (status --current-filename))/common/performance_utils.fish
 
-function compress --description 'Create archives with intelligent format selection and options'
+function compress --description 'Create archives with intelligent format selection and modern Fish features'
     set -l usage "\
 compress - Create archives with smart format selection and optimization
 
@@ -48,260 +48,268 @@ Smart Format Selection:
   - Mixed content (30-70%) → tar.gz (balanced)
   - Binary content (<30%) → tar.zst (fast, efficient)
 
-Formats:
-  tar           Uncompressed tar
-  tar.gz, tgz   Gzip compressed tar (balanced)
-  tar.bz2, tbz2 Bzip2 compressed tar (high compression, slow)
-  tar.xz, txz   XZ compressed tar (best compression for text)
-  tar.zst, tzst Zstd compressed tar (fast, good compression)
-  tar.lz4, tlz4 LZ4 compressed tar (very fast, lower compression)
-  tar.lz, tlz   Lzip compressed tar
-  tar.lzo, tzo  LZO compressed tar
-  tar.br, tbr   Brotli compressed tar
-  zip           ZIP archive (universal compatibility)
-  7z            7-Zip archive (high compression, supports encryption)
-  auto          Automatically detect best format (default)
+Supported Formats:
+  tar, tar.gz, tar.bz2, tar.xz, tar.zst, tar.lz4, tar.lz, tar.lzo, tar.br
+  zip, 7z, rar (extract only)
+  Short names: tgz, tbz2, txz, tzst, tlz4, tlz, tzo, tbr
 
 Examples:
-  compress backup.tar.zst ./data             # Fast compression with zstd
-  compress -F tar.xz logs.tar.xz /var/log    # Maximum compression
-  compress --smart output.auto ./project     # Auto-select format
-  compress -L 9 archive.7z files/            # Maximum 7z compression
-  compress -e -p secret secure.zip docs/     # Encrypted ZIP
-  compress -x '*.tmp' -x '*.log' out.tgz .   # Exclude patterns
-  compress -u existing.tar.gz newfile.txt    # Update existing archive
-  compress --checksum backup.txz data/       # Create with checksum
-  compress --split 100M large.zip huge/      # Split into 100MB parts
+  compress backup.tar.zst ./mydata          # Fast compression with zstd
+  compress -F tar.xz -L 9 logs.tar.xz /var/log  # Maximum compression
+  compress --smart output.auto ./project    # Auto-select best format
+  compress -e -p secret secure.zip docs/    # Create encrypted archive
+  compress -x '*.tmp' -x '*.log' clean.tgz .  # Exclude patterns
+  compress -i '*.txt' -i '*.md' docs.zip .  # Include patterns only
+  compress -u existing.tar.gz newfile.txt  # Update existing archive
+  compress -t 16 -F tar.zst fast.tzst large-dir/  # Multi-threaded
+  compress -C /var/www -F tar.xz web-backup.txz html/  # Change directory
+  compress --solid -F 7z backup.7z data/   # Solid 7z archive
+  compress --checksum backup.tar.xz data/  # Generate checksum
+  compress --split 100M large.zip huge-files/  # Split archive
+  compress -v -L 7 -F tar.xz archive.txz files/  # Verbose output
 "
 
-    # Parse arguments
-    set -l format auto
-    set -l level ''
-    set -l threads ''
+    # Parse arguments with modern Fish features
+    set -l options h/help F/format= L/level= t/threads= e/encrypt p/password= C/chdir= i/include-glob=+ x/exclude-glob=+ u/update a/append q/quiet v/verbose
+    set -l long_options no-progress smart solid checksum split= dry-run timestamp auto-rename compare
+    argparse $options $long_options -- $argv
+    
+    if test $status -ne 0
+        echo $usage
+        return 2
+    end
+    
+    # Handle help
+    if set -q _flag_help
+        echo $usage
+        return 0
+    end
+    
+    # Check Fish compatibility
+    __fish_archive_ensure_fish_compatibility; or begin
+        __fish_archive_log warn "Continuing with limited functionality"
+    end
+    
+    # Get output and input files
+    set -l output $argv[1]
+    set -l input_files $argv[2..-1]
+    
+    if test -z "$output"
+        __fish_archive_log error "Output file not specified"
+        echo $usage
+        return 2
+    end
+    
+    if test (count $input_files) -eq 0
+        __fish_archive_log error "No input files specified"
+        echo $usage
+        return 2
+    end
+    
+    # Set defaults
+    set -l format "auto"
+    set -l level 6
+    set -l threads (__fish_archive_resolve_threads "$_flag_threads")
     set -l encrypt 0
-    set -l password ''
-    set -l chdir ''
-    set -l include_globs
-    set -l exclude_globs
+    set -l password ""
+    set -l chdir ""
+    set -l include_patterns
+    set -l exclude_patterns
     set -l update 0
     set -l append 0
     set -l quiet 0
     set -l verbose 0
-    set -l show_progress 1
+    set -l no_progress 0
     set -l smart 0
     set -l solid 0
-    set -l gen_checksum 0
-    set -l split_size ''
+    set -l checksum 0
+    set -l split_size ""
     set -l dry_run 0
-    set -l add_timestamp 0
+    set -l timestamp 0
     set -l auto_rename 0
-    set -l compare_formats 0
-
-    argparse -i \
-        'F/format=' \
-        'L/level=' \
-        't/threads=' \
-        'e/encrypt' \
-        'p/password=' \
-        'C/chdir=' \
-        'i/include-glob=+' \
-        'x/exclude-glob=+' \
-        'u/update' \
-        'a/append' \
-        'q/quiet' \
-        'v/verbose' \
-        'no-progress' \
-        'smart' \
-        'solid' \
-        'checksum' \
-        'split=' \
-        'dry-run' \
-        'timestamp' \
-        'auto-rename' \
-        'compare' \
-        'h/help' \
-        -- $argv
-    or begin
-        echo $usage >&2
-        return 2
-    end
-
-    # Handle flags
-    set -q _flag_help; and echo $usage; and return 0
-    set -q _flag_format; and set format (string lower -- $_flag_format)
-    set -q _flag_level; and set level $_flag_level
-    set -q _flag_threads; and set threads $_flag_threads
-    set -q _flag_encrypt; and set encrypt 1
-    set -q _flag_password; and set password $_flag_password
-    set -q _flag_chdir; and set chdir (sanitize_path $_flag_chdir)
-    set -q _flag_include_glob; and set include_globs $_flag_include_glob
-    set -q _flag_exclude_glob; and set exclude_globs $_flag_exclude_glob
-    set -q _flag_update; and set update 1
-    set -q _flag_append; and set append 1
-    set -q _flag_quiet; and set quiet 1
-    set -q _flag_verbose; and set verbose 1
-    set -q _flag_no_progress; and set show_progress 0
-    set -q _flag_smart; and set smart 1
-    set -q _flag_solid; and set solid 1
-    set -q _flag_checksum; and set gen_checksum 1
-    set -q _flag_split; and set split_size $_flag_split
-    set -q _flag_dry_run; and set dry_run 1
-    set -q _flag_timestamp; and set add_timestamp 1
-    set -q _flag_auto_rename; and set auto_rename 1
-    set -q _flag_compare; and set compare_formats 1
-
-    # Validate arguments
-    if test (count $argv) -lt 1
-        log error "Output archive not specified"
-        echo $usage >&2
-        return 2
-    end
-
-    set -l output (sanitize_path $argv[1])
-    set -l inputs $argv[2..-1]
+    set -l compare 0
     
-    # Default to current directory if no inputs
-    if test (count $inputs) -eq 0
-        set inputs .
+    # Process flags
+    if set -q _flag_format
+        set format "$_flag_format"
     end
     
-    # Prepare output path with timestamp and auto-rename
-    set output (validate_output_path "$output" $auto_rename $add_timestamp)
-    if test $auto_rename -eq 1; and test $quiet -eq 0
-        log info "Auto-renamed to: $output"
+    if set -q _flag_level
+        set level "$_flag_level"
     end
-
-    # Validate chdir if specified
-    if test -n "$chdir"; and not test -d "$chdir"
-        log error "Directory not found: $chdir"
+    
+    if set -q _flag_encrypt
+        set encrypt 1
+    end
+    
+    if set -q _flag_password
+        set password "$_flag_password"
+    end
+    
+    if set -q _flag_chdir
+        set chdir "$_flag_chdir"
+    end
+    
+    if set -q _flag_include_glob
+        set include_patterns $_flag_include_glob
+    end
+    
+    if set -q _flag_exclude_glob
+        set exclude_patterns $_flag_exclude_glob
+    end
+    
+    if set -q _flag_update
+        set update 1
+    end
+    
+    if set -q _flag_append
+        set append 1
+    end
+    
+    if set -q _flag_quiet
+        set quiet 1
+    end
+    
+    if set -q _flag_verbose
+        set verbose 1
+    end
+    
+    if set -q _flag_no_progress
+        set no_progress 1
+    end
+    
+    if set -q _flag_smart
+        set smart 1
+    end
+    
+    if set -q _flag_solid
+        set solid 1
+    end
+    
+    if set -q _flag_checksum
+        set checksum 1
+    end
+    
+    if set -q _flag_split
+        set split_size "$_flag_split"
+    end
+    
+    if set -q _flag_dry_run
+        set dry_run 1
+    end
+    
+    if set -q _flag_timestamp
+        set timestamp 1
+    end
+    
+    if set -q _flag_auto_rename
+        set auto_rename 1
+    end
+    
+    if set -q _flag_compare
+        set compare 1
+    end
+    
+    # Determine format
+    if test "$format" = "auto"; or test $smart -eq 1
+        # Prefer zstd for small, pigz(gzip) for huge unless user specifies
+        set format (__fish_archive_smart_format $input_files)
+        __fish_archive_log info "Selected format: $format"
+    else
+        # Detect format from output filename if not specified
+        set -l ext_format (__fish_archive_get_format_from_extension (__fish_archive_get_extension "$output"))
+        if test "$ext_format" != "unknown"
+            set format "$ext_format"
+        end
+    end
+    
+    # Validate format
+    if not __fish_archive_validate_format_support "$format" "compress"
         return 1
     end
-
-    # Smart format selection and normalization
-    set -l format_result (normalize_output_format "$output" $format $smart)
-    set format $format_result[1]
-    set output $format_result[2]
-
-    # Resolve thread count
-    set -l thread_count (resolve_threads $threads)
-
+    
     # Validate compression level
-    set -l comp_level (validate_level $format $level)
-
-    # Collect and filter files
-    set -l file_list (collect_input_files $inputs $chdir)
-    set file_list (apply_file_filters $file_list $include_globs $exclude_globs)
-    
-    # Validate file list
-    if not validate_file_list $file_list "compress"
+    if not __fish_archive_validate_level $level "$format"
+        __fish_archive_log error "Invalid compression level $level for format $format"
         return 1
     end
     
-    # Calculate total size
-    set -l total_size (calculate_total_size $file_list)
-
-    # Dry run mode
+    # Collect and filter input files
+    set -l valid_files (__fish_archive_collect_and_filter_files $input_files "$include_patterns" "$exclude_patterns")
+    if test $status -ne 0
+        return 1
+    end
+    
+    # Handle output file naming
+    if test $auto_rename -eq 1; or test $timestamp -eq 1
+        set output (__fish_archive_handle_output_naming "$output" $auto_rename $timestamp)
+    end
+    
+    # Get file sizes for progress and optimization
+    set -l total_size 0
+    for file in $valid_files
+        set total_size (math "$total_size + "(__fish_archive_get_file_size "$file"))
+    end
+    
+    # Optimize performance
+    set -l perf_settings (__fish_archive_optimize_performance $total_size "compress")
+    set -l optimal_threads (echo $perf_settings | cut -d' ' -f1)
+    set -l enable_progress (echo $perf_settings | cut -d' ' -f2)
+    
+    # Override with user settings
+    if test -n "$_flag_threads"
+        set optimal_threads $threads
+    end
+    
+    if test $no_progress -eq 1
+        set enable_progress 0
+    end
+    
+    # Prepare compression arguments
+    set -l compress_args (__fish_archive_prepare_compression_args "$format" $level $optimal_threads $solid $encrypt "$password" "$output" $valid_files)
+    if test $status -ne 0
+        return 1
+    end
+    
+    # Execute compression
     if test $dry_run -eq 1
-        log info "[DRY-RUN] Would create: $output"
-        log info "[DRY-RUN] Format: $format"
-        log info "[DRY-RUN] Compression level: $comp_level"
-        log info "[DRY-RUN] Files: "(count $file_list)" ("(human_size $total_size)")"
-        test $verbose -eq 1; and printf "  - %s\n" $file_list
+        __fish_archive_log info "Would compress to: $output"
+        __fish_archive_log info "Command: "(string join ' ' $compress_args)
         return 0
     end
+    
+    __fish_archive_log info "Compressing to: $output"
+    
+    # Execute with progress and measure
+    set -l start_data (__fish_pack_start_measurement)
 
-    # Show info
-    if test $quiet -eq 0
-        log info "Creating archive: $output"
-        if test $verbose -eq 1
-            log debug "  Format: $format"
-            log debug "  Compression level: $comp_level"
-            log debug "  Threads: $thread_count"
-        end
-        show_file_statistics $file_list $total_size $verbose $quiet
+    if test $enable_progress -eq 1; and test $total_size -gt 10485760
+        __fish_pack_exec_with_progress $compress_args $total_size
+    else
+        __fish_pack_safe_exec $compress_args
     end
+    set -l cmd_status $status
 
-    # Prepare environment
-    if not prepare_archive_environment "compress" $format $thread_count $verbose
-        return $status
-    end
-    
-    # Validate archive operation
-    if not validate_archive_common "$output" "compress" $format "$password" $encrypt
-        return $status
-    end
-    
-    # Create output directory
-    if not create_output_directory "$output" $quiet
-        return $status
-    end
-    
-    # Perform compression
-    if create_archive "$output" $file_list $format $comp_level $thread_count $encrypt "$password" "$chdir" $update $append $verbose $show_progress $solid
-        if test $quiet -eq 0
-            set -l out_size (get_file_size "$output")
-            set -l ratio 0
-            if test $total_size -gt 0
-                set ratio (math -s1 "100 - ($out_size * 100 / $total_size)")
-            end
-            colorize green "✓ Created: $output ("(human_size $out_size)", $ratio% compression)\n"
-        end
+    set -l perf_data (__fish_pack_end_measurement "$start_data")
+    set -l duration (echo $perf_data | cut -d' ' -f1)
+    set -l cpu_pct (echo $perf_data | cut -d' ' -f2)
+
+    if test $cmd_status -eq 0
+        __fish_archive_log info "Successfully compressed to: $output"
         
         # Generate checksum if requested
-        if test $gen_checksum -eq 1
-            generate_checksum_file "$output" "sha256" $quiet
+        if test $checksum -eq 1
+            __fish_archive_generate_checksum "$output"
         end
         
-        # Split archive if requested
-        if test -n "$split_size"
-            log info "Splitting archive into $split_size parts..."
-            if split_archive_file "$output" "$split_size" $quiet
-                log info "✓ Archive split complete"
-            else
-                log warn "Failed to split archive"
-            end
-        end
+        # Show compression stats and summary
+        set -l compressed_size (__fish_archive_get_file_size "$output")
+        __fish_archive_show_compression_stats $total_size $compressed_size "$format"
+        __fish_archive_show_operation_summary "compress" "$format" (count $valid_files) $compressed_size $duration "$cpu_pct"
         
         return 0
     else
-        log error "Failed to create archive: $output"
+        __fish_archive_log error "Failed to compress to: $output"
         return 1
     end
 end
-
-# ============================================================================
-# Internal: Archive Creation Logic
-# ============================================================================
-
-function create_archive --description 'Internal: perform actual compression'
-    set -l output $argv[1]
-    set -l files $argv[2..-13]  # Files come before the fixed options
-    set -l format $argv[-12]
-    set -l level $argv[-11]
-    set -l threads $argv[-10]
-    set -l encrypt $argv[-9]
-    set -l password $argv[-8]
-    set -l chdir $argv[-7]
-    set -l update $argv[-6]
-    set -l append $argv[-5]
-    set -l verbose $argv[-4]
-    set -l progress $argv[-3]
-    set -l solid $argv[-2]
-
-    # Use common archive operation function
-    execute_format_command $format "compress" $output $files $level $threads $encrypt "$password" $solid $verbose $update "$chdir"
-end
-
-# ============================================================================
-# Format-Specific Compression Functions
-# ============================================================================
-
-# Note: Format-specific compression functions are now handled by common functions
-# in functions/common/format_operations.fish
-
-# ============================================================================
-# Archive Splitting
-# ============================================================================
-
-# Note: Archive splitting function is now handled by common functions
-# in functions/common/file_operations.fish

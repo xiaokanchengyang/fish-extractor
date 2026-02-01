@@ -76,14 +76,19 @@ function _is_text_file --description 'Check if file is text or binary'
         end
     end
     
-    # Fallback: check for null bytes
-    if test -r "$file"
-        # Check first 1024 bytes for null characters
-        dd if="$file" bs=1 count=1024 2>/dev/null | grep -q $'\0'
+    # Check for binary content (null bytes)
+    # Use perl if available as it's reliable for binary detection
+    if command -q perl
+        dd if="$file" bs=1 count=1024 2>/dev/null | perl -ne 'exit 0 if /\0/; END { exit 1 }'
         if test $status -eq 0
-            return 1  # Binary file
-        else
-            return 0  # Text file
+            return 0  # Binary
+        end
+    else
+        # Fallback to grep with printf
+        set -l null_byte (printf '\0')
+        dd if="$file" bs=1 count=1024 2>/dev/null | grep -q -F -- "$null_byte"
+        if test $status -eq 0
+            return 0  # Binary
         end
     end
     

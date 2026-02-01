@@ -20,9 +20,6 @@ extract file.tar.gz
 # Create an archive
 compress backup.tar.zst ./mydata
 
-# Batch queue (sequential)
-archqueue --sequential 'compress::out.tzst::src/' 'extract::dist.zip::./out'
-
 # Check system capabilities
 check
 ```
@@ -33,27 +30,29 @@ check
 - **[Complete Usage Guide](docs/USAGE.md)** - Detailed usage examples and advanced features
 - **[Installation Guide](docs/INSTALL.md)** - Step-by-step installation instructions
 - **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Code organization and development guide
+- **[Security Policy](SECURITY.md)** - Security features and policies
 - **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
 
 ## Key Features
 
-- 🎯 **Smart Compression Strategy** - Auto-select zstd (small/medium), pigz/gzip (large), xz (text-heavy)
-- 🚀 **High Performance** - Multi-threaded with parallel tools (pigz, pbzip2)
-- 📦 **Modern Formats** - tar.xz, tar.zst, tar.lz4, single-file xz/zst/lz4/gz
-- 🧰 **Cross-platform Consistency** - Auto-detect tools; macOS/Linux/Windows (MSYS2) guidance
-- 🎨 **Beautiful Output** - Progress bars with ETA/rate/avg, CPU utilization summary
-- 🔐 **Encryption Support** - Password-protected archives for zip and 7z
-- 🧪 **Testing & Verification** - Built-in integrity checking and checksum verification
-- 💾 **Backup Support** - Automatic backup before extraction
-- ✂️ **Archive Splitting** - Split large archives into manageable parts
-- 📊 **Batch Queue** - `archqueue` runs tasks sequentially or in parallel
+- 🛡️ **Security First** - Strict "Fail-Fast" protection against Path Traversal (ZipSlip) attacks and secure password handling.
+- 🎯 **Smart Compression Strategy** - Auto-select zstd (small/medium), pigz/gzip (large), xz (text-heavy).
+- 🚀 **High Performance** - Multi-threaded with parallel tools (pigz, pbzip2, zstd, xz).
+- 📦 **Modern Formats** - tar.xz, tar.zst, tar.lz4, single-file xz/zst/lz4/gz.
+- 🧰 **Cross-platform Consistency** - Auto-detect tools; macOS/Linux/Windows (MSYS2) guidance.
+- 🎨 **Beautiful Output** - Progress bars with ETA/rate/avg, CPU utilization summary.
+- 🔐 **Encryption Support** - Password-protected archives for zip and 7z.
+- 🧪 **Testing & Verification** - Built-in integrity checking and checksum verification.
+- 💾 **Backup Support** - Automatic backup before extraction.
+- ✂️ **Archive Splitting** - Split large archives into manageable parts.
+- 📊 **Batch Queue** - `archqueue` runs tasks sequentially or in parallel.
 
 ## Commands
 
-- **`extract`** - Extract archives with smart format detection
-- **`compress`** - Create archives with intelligent compression
-- **`archqueue`** - Batch queue for compress/extract tasks
-- **`check`** - Check system capabilities and configuration
+- **`extract`** - Extract archives with smart format detection and security verification.
+- **`compress`** - Create archives with intelligent compression.
+- **`check`** - (formerly `doctor`) Diagnose system capabilities and missing tools.
+- **`archqueue`** - Batch queue for compress/extract tasks.
 
 ## Quick Examples
 
@@ -70,13 +69,10 @@ compress -F tar.xz -L 9 logs.tar.xz    # Maximum compression
 compress --smart output.auto ./project # Auto-select best format
 compress -e -p secret secure.zip docs/ # Create encrypted archive
 
-# Queue tasks
-archqueue --parallel 2 'compress::a.tzst::a/' 'extract::b.zip::out'
-
 # System diagnostics
 check                                  # Check system capabilities
-check -v                              # Detailed information
-check --fix                           # Get installation suggestions
+check -v                               # Detailed information
+check --fix                            # Get installation suggestions
 ```
 
 ## Requirements
@@ -99,8 +95,7 @@ set -Ux FISH_ARCHIVE_LOG_LEVEL info
 
 ## What's New
 
-- Smart compression strategy (zstd/pigz/xz)
-- Enhanced progress with ETA/Rate/Avg and CPU utilization summary
-- Batch task queue `archqueue`
-- Single-file compression for xz/zst/lz4/gz, etc.
-- Cross-platform install guidance (Linux/macOS/Windows)
+- **Strict Security**: Archives with unsafe paths (e.g. `../`) are now skipped by default.
+- **Unified Logic**: Core logic split into `common/` for better maintainability.
+- **Check Command**: `doctor` renamed to `check` for clarity (alias preserved).
+- **Smart compression**: Enhanced auto-selection strategy.

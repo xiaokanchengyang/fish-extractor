@@ -24,13 +24,13 @@ function show_help
     echo "  --force, -f         Force installation even if plugin exists"
     echo "  --uninstall, -u     Uninstall the plugin"
     echo "  --test, -t          Run tests after installation"
-    echo "  --doctor, -d        Run doctor after installation"
+    echo "  --check, -c         Run system check after installation"
     echo ""
     echo "Examples:"
     echo "  fish install.fish                    # Install the plugin"
     echo "  fish install.fish --force            # Force reinstall"
     echo "  fish install.fish --uninstall        # Uninstall the plugin"
-    echo "  fish install.fish --test --doctor    # Install and run tests"
+    echo "  fish install.fish --test --check     # Install and run diagnostics"
 end
 
 function show_version
@@ -42,7 +42,14 @@ function check_fish_version
     set -l fish_version (fish --version | string replace -r '.*?([0-9]+\.[0-9]+).*' '$1')
     set -l required_version "4.1"
     
-    if test (math "$fish_version >= $required_version") -eq 1
+    # Use sort -V to compare versions reliably
+    if test "$fish_version" = "$required_version"
+        echo "✓ Fish version $fish_version is compatible"
+        return 0
+    end
+    
+    set -l sorted_versions (printf "%s\n%s" "$fish_version" "$required_version" | sort -V)
+    if test "$sorted_versions[1]" = "$required_version"
         echo "✓ Fish version $fish_version is compatible"
         return 0
     else
@@ -81,8 +88,13 @@ function install_plugin
     
     echo "Installing Fish Pack v$version..."
     
+    # Target directories
+    set -l func_dir "$HOME/.config/fish/functions"
+    set -l comp_dir "$HOME/.config/fish/completions"
+    set -l conf_dir "$HOME/.config/fish/conf.d"
+    
     # Check if already installed
-    if test -d "$HOME/.config/fish/functions" -a -f "$HOME/.config/fish/functions/extract.fish"
+    if test -d "$func_dir" -a -f "$func_dir/extract.fish"
         if test "$force" != "1"
             echo "⚠ Plugin already installed. Use --force to reinstall."
             return 1
@@ -92,35 +104,38 @@ function install_plugin
     end
     
     # Create directories with error checking
-    mkdir -p "$HOME/.config/fish/functions" 2>/dev/null; or begin
-        echo "✗ Failed to create functions directory"
-        return 1
-    end
-    mkdir -p "$HOME/.config/fish/completions" 2>/dev/null; or begin
-        echo "✗ Failed to create completions directory"
-        return 1
-    end
-    mkdir -p "$HOME/.config/fish/conf.d" 2>/dev/null; or begin
-        echo "✗ Failed to create conf.d directory"
+    mkdir -p "$func_dir" "$comp_dir" "$conf_dir" 2>/dev/null; or begin
+        echo "✗ Failed to create config directories"
         return 1
     end
     
-    # Install functions
+    # Install functions (root level)
     echo "Installing functions..."
     for file in $script_dir/functions/*.fish
         set -l basename (basename $file)
-        cp "$file" "$HOME/.config/fish/functions/$basename" 2>/dev/null; or begin
+        cp "$file" "$func_dir/$basename" 2>/dev/null; or begin
             echo "  ✗ Failed to install $basename"
             return 1
         end
         echo "  ✓ Installed $basename"
     end
     
+    # Install common module (recursive)
+    if test -d "$script_dir/functions/common"
+        echo "Installing common modules..."
+        mkdir -p "$func_dir/common"
+        cp -r "$script_dir/functions/common/"* "$func_dir/common/" 2>/dev/null; or begin
+            echo "  ✗ Failed to install common modules"
+            return 1
+        end
+        echo "  ✓ Installed common/ modules"
+    end
+    
     # Install completions
     echo "Installing completions..."
     for file in $script_dir/completions/*.fish
         set -l basename (basename $file)
-        cp "$file" "$HOME/.config/fish/completions/$basename" 2>/dev/null; or begin
+        cp "$file" "$comp_dir/$basename" 2>/dev/null; or begin
             echo "  ✗ Failed to install $basename"
             return 1
         end
@@ -131,7 +146,7 @@ function install_plugin
     echo "Installing configuration..."
     for file in $script_dir/conf.d/*.fish
         set -l basename (basename $file)
-        cp "$file" "$HOME/.config/fish/conf.d/$basename" 2>/dev/null; or begin
+        cp "$file" "$conf_dir/$basename" 2>/dev/null; or begin
             echo "  ✗ Failed to install $basename"
             return 1
         end
@@ -145,16 +160,25 @@ end
 function uninstall_plugin
     echo "Uninstalling Fish Pack..."
     
-    # Remove functions
-    for file in $HOME/.config/fish/functions/{core,extract,compress,doctor}.fish
-        if test -f "$file"
-            rm "$file"
-            echo "  ✓ Removed "(basename $file)
+    set -l func_dir "$HOME/.config/fish/functions"
+    
+    # Remove specific functions
+    set -l funcs extract.fish compress.fish check.fish pack.fish unpack.fish
+    for f in $funcs
+        if test -f "$func_dir/$f"
+            rm "$func_dir/$f"
+            echo "  ✓ Removed $f"
         end
     end
     
+    # Remove common directory if it looks like ours (contains optimized_common.fish)
+    if test -f "$func_dir/common/optimized_common.fish"
+        rm -rf "$func_dir/common"
+        echo "  ✓ Removed common/ modules"
+    end
+    
     # Remove completions
-    for file in $HOME/.config/fish/completions/*.fish
+    for file in $HOME/.config/fish/completions/archive_manager.fish $HOME/.config/fish/completions/fish_extractor.fish
         if test -f "$file"
             rm "$file"
             echo "  ✓ Removed "(basename $file)
@@ -162,7 +186,7 @@ function uninstall_plugin
     end
     
     # Remove configuration
-    for file in $HOME/.config/fish/conf.d/*.fish
+    for file in $HOME/.config/fish/conf.d/archive_manager.fish $HOME/.config/fish/conf.d/fish_extractor.fish
         if test -f "$file"
             rm "$file"
             echo "  ✓ Removed "(basename $file)
@@ -193,23 +217,19 @@ function run_tests
     end
 end
 
-function run_doctor
-    echo "Running doctor..."
+function run_check
+    echo "Running system check..."
     
-    if command -q doctor
-        doctor
-        set -l result $status
-        
-        if test $result -eq 0
-            echo "✓ Doctor check passed!"
-        else
-            echo "⚠ Doctor found some issues"
-        end
-        
-        return $result
+    # Use the installed function if available, else local
+    if functions -q check
+        check
+        return $status
+    else if test -f "$script_dir/functions/check.fish"
+        fish -c "source $script_dir/functions/common/optimized_common.fish; source $script_dir/functions/check.fish; check"
+        return $status
     else
-        echo "⚠ Doctor command not available, skipping check"
-        return 0
+        echo "⚠ Check command not available"
+        return 1
     end
 end
 
@@ -217,7 +237,7 @@ function main
     set -l force 0
     set -l uninstall 0
     set -l run_tests_flag 0
-    set -l run_doctor_flag 0
+    set -l run_check_flag 0
     
     # Parse arguments
     for arg in $argv
@@ -234,8 +254,8 @@ function main
                 set uninstall 1
             case --test -t
                 set run_tests_flag 1
-            case --doctor -d
-                set run_doctor_flag 1
+            case --check -c --doctor -d
+                set run_check_flag 1
             case '*'
                 echo "Unknown option: $arg"
                 echo "Use --help for usage information"
@@ -278,9 +298,9 @@ function main
         echo ""
     end
     
-    # Run doctor if requested
-    if test $run_doctor_flag -eq 1
-        run_doctor
+    # Run check if requested
+    if test $run_check_flag -eq 1
+        run_check
         echo ""
     end
     
@@ -294,8 +314,7 @@ function main
     echo "  pack       - Alternative name for compress"
     echo "  unpack     - Alternative name for extract"
     echo ""
-    echo "Run 'extract --help', 'compress --help', or 'check --help' for more information."
-    echo "Run 'check' to verify your system's archive handling capabilities."
+    echo "Run 'extract --help' or 'compress --help' for more information."
 end
 
 # Run main function

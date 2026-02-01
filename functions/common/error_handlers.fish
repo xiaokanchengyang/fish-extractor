@@ -10,9 +10,10 @@ function __fish_pack_set_error_trap --description 'Set up error handling for a f
     # Set up exit handler
     function __fish_pack_on_exit_$fish_pid --on-process-exit $fish_pid
         # Run cleanup if it exists
-        if set -q __fish_pack_cleanup_$fish_pid
-            eval $__fish_pack_cleanup_$fish_pid
-            set -e __fish_pack_cleanup_$fish_pid
+        set -l cleanup_var __fish_pack_cleanup_$fish_pid
+        if set -q $cleanup_var
+            eval \$$cleanup_var
+            set -e $cleanup_var
         end
         
         # Remove this handler
@@ -180,7 +181,7 @@ function __fish_pack_validate_operation --description 'Validate operation prereq
                 set -l required_mb (string replace 'space:' '' -- $req)
                 set -l available_mb (df -m . | tail -1 | awk '{print $4}')
                 if test $available_mb -lt $required_mb
-                    __fish_archive_log error "$operation requires ${required_mb}MB free space (available: ${available_mb}MB)"
+                    __fish_archive_log error "$operation requires "$required_mb"MB free space (available: "$available_mb"MB)"
                     return 1
                 end
         end

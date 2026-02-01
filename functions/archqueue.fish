@@ -2,7 +2,7 @@
 # Enhanced with logging, locking, and cancellation support
 
 # Load platform helpers for cross-platform compatibility
-source (dirname (status --current-filename))/../functions/common/platform_helpers.fish
+source (dirname (status --current-filename))/common/platform_helpers.fish
 
 function archqueue --description 'Batch queue for compress/extract tasks with enhanced robustness'
     set -l usage "\
@@ -10,7 +10,7 @@ archqueue - Manage batch archive tasks (compress/extract)
 
 Usage: archqueue [OPTIONS] TASK...
 
-TASK syntax:
+Task Syntax:
   compress::OUTPUT::INPUTS...   # e.g., compress::out.tzst::dir1 file2
   extract::FILE::DEST           # e.g., extract::archive.zip::destdir
 
@@ -111,16 +111,15 @@ Examples:
     _log_message "Starting archqueue with "(count $tasks)" task(s)" $log_fd $verbose
 
     # Process tasks
-    set -l pids
-    set -l running 0
+    set -l running_pids
     set -l failed 0
     set -l completed 0
     set -l total_tasks (count $tasks)
+    set -l task_index 0
 
     for task in $tasks
-        set -l task_id (math $completed + $failed + 1)
-        _log_message "[$task_id/$total_tasks] Processing: $task" $log_fd $verbose
-
+        set task_index (math $task_index + 1)
+        
         # Parse task
         set -l parts (string split '::' -- $task)
         set -l kind $parts[1]
@@ -144,33 +143,56 @@ Examples:
                 end
                 set task_name "extract $file"
             case '*'
-                _log_message "[$task_id/$total_tasks] ERROR: Unknown task type: $kind" $log_fd 1
+                _log_message "[$task_index/$total_tasks] ERROR: Unknown task type: $kind" $log_fd 1
                 set failed (math $failed + 1)
                 continue
         end
 
         # Dry run mode
         if test $dry_run -eq 1
-            _log_message "[$task_id/$total_tasks] DRY-RUN: Would execute: $cmd" $log_fd 1
+            _log_message "[$task_index/$total_tasks] DRY-RUN: Would execute: $cmd" $log_fd 1
             set completed (math $completed + 1)
             continue
         end
 
-        # Execute task
+        _log_message "[$task_index/$total_tasks] Queueing: $task_name" $log_fd $verbose
+
         if test $parallel -eq 1
-            _execute_parallel_task "$cmd" "$task_name" $task_id $total_tasks $timeout $retry_count $log_fd $verbose
-            set -l result $status
-            if test $result -eq 0
-                set completed (math $completed + 1)
-            else
-                set failed (math $failed + 1)
-                if test $stop_on_error -eq 1
-                    _log_message "Stopping on error as requested" $log_fd 1
-                    break
+            # Wait if max parallel reached
+            while test (count $running_pids) -ge $max_parallel
+                set -l new_pids
+                for pid in $running_pids
+                    if not kill -0 $pid 2>/dev/null
+                        # Process finished
+                        wait $pid
+                        if test $status -eq 0
+                            set completed (math $completed + 1)
+                        else
+                            set failed (math $failed + 1)
+                        end
+                    else
+                        set -a new_pids $pid
+                    end
+                end
+                set running_pids $new_pids
+                # Small sleep to avoid busy wait
+                if test (count $running_pids) -ge $max_parallel
+                    sleep 0.1
                 end
             end
+
+            # Start new task
+            if test $timeout -gt 0
+                timeout $timeout $cmd &
+            else
+                $cmd &
+            end
+            set -l pid $last_pid
+            set -a running_pids $pid
+            _log_message "[$task_index/$total_tasks] Started background task: $task_name (PID: $pid)" $log_fd $verbose
         else
-            _execute_sequential_task "$cmd" "$task_name" $task_id $total_tasks $timeout $retry_count $log_fd $verbose
+            # Sequential execution
+            _execute_sequential_task "$task_name" $task_index $total_tasks $timeout $retry_count $log_fd $verbose $cmd
             set -l result $status
             if test $result -eq 0
                 set completed (math $completed + 1)
@@ -181,6 +203,16 @@ Examples:
                     break
                 end
             end
+        end
+    end
+
+    # Wait for remaining parallel tasks
+    for pid in $running_pids
+        wait $pid
+        if test $status -eq 0
+            set completed (math $completed + 1)
+        else
+            set failed (math $failed + 1)
         end
     end
 
@@ -221,7 +253,7 @@ function _acquire_lock --description 'Acquire lock file'
     set -l lock_file $argv[1]
     
     # Create lock file with PID
-    echo $$ > "$lock_file.lock" 2>/dev/null
+    echo $fish_pid > "$lock_file.lock" 2>/dev/null
     if test $status -ne 0
         return 1
     end
@@ -250,48 +282,15 @@ function _release_lock --description 'Release lock file'
     rm -f "$lock_file"
 end
 
-function _execute_parallel_task --description 'Execute task in parallel'
-    set -l cmd $argv[1]
-    set -l task_name $argv[2]
-    set -l task_id $argv[3]
-    set -l total_tasks $argv[4]
-    set -l timeout $argv[5]
-    set -l retry_count $argv[6]
-    set -l log_fd $argv[7]
-    set -l verbose $argv[8]
-    
-    # Execute with timeout if specified
-    if test $timeout -gt 0
-        timeout $timeout $cmd &
-    else
-        $cmd &
-    end
-    
-    set -l pid $last_pid
-    _log_message "[$task_id/$total_tasks] Started: $task_name (PID: $pid)" $log_fd $verbose
-    
-    # Wait for completion
-    wait $pid
-    set -l result $status
-    
-    if test $result -eq 0
-        _log_message "[$task_id/$total_tasks] Completed: $task_name" $log_fd $verbose
-    else
-        _log_message "[$task_id/$total_tasks] Failed: $task_name (exit code: $result)" $log_fd 1
-    end
-    
-    return $result
-end
-
 function _execute_sequential_task --description 'Execute task sequentially'
-    set -l cmd $argv[1]
-    set -l task_name $argv[2]
-    set -l task_id $argv[3]
-    set -l total_tasks $argv[4]
-    set -l timeout $argv[5]
-    set -l retry_count $argv[6]
-    set -l log_fd $argv[7]
-    set -l verbose $argv[8]
+    set -l task_name $argv[1]
+    set -l task_id $argv[2]
+    set -l total_tasks $argv[3]
+    set -l timeout $argv[4]
+    set -l retry_count $argv[5]
+    set -l log_fd $argv[6]
+    set -l verbose $argv[7]
+    set -l cmd $argv[8..-1]
     
     set -l attempts 0
     set -l result 1

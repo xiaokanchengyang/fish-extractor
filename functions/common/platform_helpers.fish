@@ -266,7 +266,7 @@ function _create_temp_file --description 'Create temporary file with proper perm
             echo $temp_file
         else
             # Fallback
-            echo "/tmp/$prefix.$$.tmp"
+            echo "/tmp/$prefix.$fish_pid.tmp"
         end
     else
         # Unix-like systems - always use mktemp for security
@@ -286,11 +286,11 @@ function _create_temp_dir --description 'Create temporary directory with proper 
         # Windows: use PowerShell
         set -l temp_dir (powershell -Command "[System.IO.Path]::GetTempPath()" 2>/dev/null)
         if test -n "$temp_dir"
-            set -l dir_name "$temp_dir$prefix.$$"
+            set -l dir_name "$temp_dir$prefix.$fish_pid"
             mkdir -p "$dir_name" 2>/dev/null; and echo "$dir_name"
         else
             # Fallback
-            echo "/tmp/$prefix.$$"
+            echo "/tmp/$prefix.$fish_pid"
         end
     else
         # Unix-like systems - always use mktemp for security

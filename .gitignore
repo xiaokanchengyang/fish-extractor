@@ -37,3 +37,4 @@ temp/
 # OS specific
 Thumbs.db
 .directory
+.taskmaster/

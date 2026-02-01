@@ -67,35 +67,44 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
     switch $format
         case 'tar.gz' 'tgz'
             if __fish_archive_has_command pigz; and test $threads -gt 1
-                set -a args tar -I "pigz -p $threads"
+                set -l cmd "pigz -p $threads"
+                if test $level -gt 0; set cmd "$cmd -$level"; end
+                set -a args tar -I "$cmd" -cf
             else
-                set -a args tar -czf
-            end
-            if test $level -gt 0
-                set -a args -$level
+                if test $level -gt 0
+                     set -a args tar -I "gzip -$level" -cf
+                else
+                     set -a args tar -czf
+                end
             end
             
         case 'tar.bz2' 'tbz2' 'tbz'
             if __fish_archive_has_command pbzip2; and test $threads -gt 1
-                set -a args tar -I "pbzip2 -p$threads"
+                set -l cmd "pbzip2 -p$threads"
+                if test $level -gt 0; set cmd "$cmd -$level"; end
+                set -a args tar -I "$cmd" -cf
             else
-                set -a args tar -cjf
-            end
-            if test $level -gt 0
-                set -a args -$level
+                 if test $level -gt 0
+                     set -a args tar -I "bzip2 -$level" -cf
+                else
+                     set -a args tar -cjf
+                end
             end
             
         case 'tar.xz' 'txz'
-            set -a args tar -cJf
-            if test $level -gt 0
-                set -a args -$level
+            if test $level -gt 0; or test $threads -gt 1
+                set -l cmd "xz"
+                if test $level -gt 0; set cmd "$cmd -$level"; end
+                if test $threads -gt 1; set cmd "$cmd -T$threads"; end
+                set -a args tar -I "$cmd" -cf
+            else
+                set -a args tar -cJf
             end
             
         case 'tar.zst' 'tzst'
-            set -a args tar -I "zstd -T$threads"
-            if test $level -gt 0
-                set -a args -$level
-            end
+            set -l cmd "zstd -T$threads"
+            if test $level -gt 0; set cmd "$cmd -$level"; end
+            set -a args tar -I "$cmd" -cf
             
         case 'zip'
             set -a args zip
@@ -130,7 +139,7 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
     # Add output and inputs
     set -a args "$output" $inputs
     
-    echo $args
+    printf '%s\n' $args
 end
 
 function __fish_archive_prepare_extraction_args --description 'Prepare extraction arguments with modern Fish features'
@@ -210,7 +219,7 @@ function __fish_archive_prepare_extraction_args --description 'Prepare extractio
         set -a args -C "$destination"
     end
     
-    echo $args
+    printf '%s\n' $args
 end
 
 # ============================================================================
@@ -387,15 +396,15 @@ function __fish_archive_show_operation_summary --description 'Show operation sum
     end
     
     if test $duration -gt 0
-        __fish_archive_log info "Duration: ${duration}s"
+        __fish_archive_log info "Duration: "$duration"s"
         if test $output_size -gt 0
             set -l throughput (math -s2 "$output_size / $duration / 1048576")
-            __fish_archive_log info "Throughput: ${throughput}MB/s"
+            __fish_archive_log info "Throughput: "$throughput"MB/s"
         end
     end
 
     if test -n "$cpu_pct"
-        __fish_archive_log info "Estimated CPU utilization: ${cpu_pct}%"
+        __fish_archive_log info "Estimated CPU utilization: "$cpu_pct"%"
     end
 end
 
@@ -485,4 +494,183 @@ function __fish_archive_optimize_performance --description 'Optimize performance
     end
     
     echo "$optimal_threads $enable_progress $has_pigz $has_pbzip2 $has_pv"
+end
+
+# ============================================================================
+# Helper Functions (Moved from archive_manager.fish)
+# ============================================================================
+
+function __fish_archive_handle_destination_naming --description 'Handle destination naming with auto-rename and timestamp'
+    set -l base_dest $argv[1]
+    set -l auto_rename $argv[2]
+    set -l timestamp $argv[3]
+    
+    set -l final_dest "$base_dest"
+    
+    # Add timestamp if requested
+    if test $timestamp -eq 1
+        set final_dest "$base_dest-"(date +%Y%m%d_%H%M%S)
+    end
+    
+    # Handle auto-rename if destination exists
+    if test $auto_rename -eq 1; and test -e "$final_dest"
+        set -l counter 1
+        while test -e "$final_dest-$counter"
+            set counter (math "$counter + 1")
+        end
+        set final_dest "$final_dest-$counter"
+    end
+    
+    echo $final_dest
+end
+
+function __fish_archive_handle_output_naming --description 'Handle output file naming with auto-rename and timestamp'
+    set -l base_output $argv[1]
+    set -l auto_rename $argv[2]
+    set -l timestamp $argv[3]
+    
+    set -l final_output "$base_output"
+    
+    # Add timestamp if requested
+    if test $timestamp -eq 1
+        set -l basename (__fish_archive_basename_without_ext "$base_output")
+        set -l extension (__fish_archive_get_extension "$base_output")
+        set final_output "$basename-"(date +%Y%m%d_%H%M%S)"$extension"
+    end
+    
+    # Handle auto-rename if output exists
+    if test $auto_rename -eq 1; and test -e "$final_output"
+        set -l basename (__fish_archive_basename_without_ext "$final_output")
+        set -l extension (__fish_archive_get_extension "$final_output")
+        set -l counter 1
+        while test -e "$basename-$counter$extension"
+            set counter (math "$counter + 1")
+        end
+        set final_output "$basename-$counter$extension"
+    end
+    
+    echo $final_output
+end
+
+function __fish_archive_generate_checksum --description 'Generate checksum file'
+    set -l target $argv[1]
+    
+    if test -f "$target"
+        set -l sha256_hash (__fish_archive_calculate_hash "$target" "sha256")
+        if test $status -eq 0
+            echo "$sha256_hash  "(basename "$target") > "$target.sha256"
+            __fish_archive_log info "Generated checksum: $target.sha256"
+        end
+    else if test -d "$target"
+        # Generate checksum for directory contents
+        find "$target" -type f -exec sha256sum {} \; > "$target.sha256"
+        __fish_archive_log info "Generated checksum: $target.sha256"
+    end
+end
+
+function __fish_archive_run_diagnostics --description 'Run comprehensive system diagnostics'
+    set -l verbose $argv[1]
+    set -l quiet $argv[2]
+    set -l fix $argv[3]
+    set -l export $argv[4]
+    
+    set -l report_file ""
+    if test $export -eq 1
+        set report_file "fish-archive-diagnostic-"(date +%Y%m%d_%H%M%S).txt
+    end
+    
+    # System information
+    if test $verbose -eq 1; and test $quiet -eq 0
+        __fish_archive_log info "=== Fish Archive Manager Diagnostic Report ==="
+        __fish_archive_log info "Version: "(__fish_archive_version)
+        __fish_archive_log info "Fish version: "(fish --version)
+        __fish_archive_log info "OS: "(uname -s)
+        __fish_archive_log info "Architecture: "(uname -m)
+        __fish_archive_log info "CPU cores: "(nproc 2>/dev/null; or sysctl -n hw.ncpu 2>/dev/null; or echo "unknown")
+        __fish_archive_log info "Date: "(date)
+        echo ""
+    end
+    
+    # Check required tools
+    __fish_archive_log info "=== Required Tools ==="
+    set -l required_tools file tar gzip bzip2 xz unzip zip
+    set -l missing_required
+    
+    for tool in $required_tools
+        if __fish_archive_has_command $tool
+            __fish_archive_log info "✓ $tool"
+        else
+            __fish_archive_log error "✗ $tool (missing)"
+            set -a missing_required $tool
+        end
+    end
+    
+    # Check important tools
+    __fish_archive_log info "=== Important Tools ==="
+    set -l important_tools 7z lz4 bsdtar
+    set -l missing_important
+    
+    for tool in $important_tools
+        if __fish_archive_has_command $tool
+            __fish_archive_log info "✓ $tool"
+        else
+            __fish_archive_log warn "✗ $tool (missing - extended functionality)"
+            set -a missing_important $tool
+        end
+    end
+    
+    # Check optional tools
+    if test $verbose -eq 1
+        __fish_archive_log info "=== Optional Tools ==="
+        set -l optional_tools unrar pv lzip lzop brotli pigz pbzip2 pxz split
+        
+        for tool in $optional_tools
+            if __fish_archive_has_command $tool
+                __fish_archive_log info "✓ $tool"
+            else
+                __fish_archive_log debug "✗ $tool (missing - performance enhancement)"
+            end
+        end
+    end
+    
+    # Configuration
+    __fish_archive_log info "=== Configuration ==="
+    __fish_archive_log info "Color: $FISH_ARCHIVE_COLOR"
+    __fish_archive_log info "Progress: $FISH_ARCHIVE_PROGRESS"
+    __fish_archive_log info "Default threads: $FISH_ARCHIVE_DEFAULT_THREADS"
+    __fish_archive_log info "Log level: $FISH_ARCHIVE_LOG_LEVEL"
+    
+    # Format support
+    if test $verbose -eq 1
+        __fish_archive_log info "=== Format Support ==="
+        set -l formats tar.gz tar.bz2 tar.xz tar.zst tar.lz4 zip 7z rar
+        
+        for format in $formats
+            if __fish_archive_validate_format_support "$format" "extract"
+                __fish_archive_log info "✓ $format (extract)"
+            else
+                __fish_archive_log warn "✗ $format (extract)"
+            end
+        end
+    end
+    
+    # Fix suggestions
+    if test $fix -eq 1; and test (count $missing_required) -gt 0
+        __fish_archive_log info "=== Installation Suggestions ==="
+        __fish_archive_log info "Arch Linux: sudo pacman -S "(string join ' ' $missing_required)
+        __fish_archive_log info "Ubuntu/Debian: sudo apt-get install "(string join ' ' $missing_required)
+        __fish_archive_log info "macOS: brew install "(string join ' ' $missing_required)
+    end
+    
+    # Export report
+    if test $export -eq 1
+        __fish_archive_log info "=== Report exported to: $report_file ==="
+    end
+    
+    # Return status
+    if test (count $missing_required) -gt 0
+        return 1
+    else
+        return 0
+    end
 end

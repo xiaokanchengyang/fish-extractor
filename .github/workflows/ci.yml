@@ -15,6 +15,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo apt-add-repository -y ppa:fish-shell/nightly-master
+          sudo apt-get update
           sudo apt-get install -y fish shellcheck
       
       - name: Run shellcheck on shell scripts
@@ -49,7 +52,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y software-properties-common
-          sudo apt-add-repository -y ppa:fish-shell/release-3
+          sudo apt-add-repository -y ppa:fish-shell/nightly-master
           sudo apt-get update
           sudo apt-get install -y fish
           
@@ -72,6 +75,9 @@ jobs:
       - name: Run security audit
         run: |
           sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo apt-add-repository -y ppa:fish-shell/nightly-master
+          sudo apt-get update
           sudo apt-get install -y fish
           fish scripts/security_audit.fish
       
@@ -92,7 +98,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y software-properties-common
-          sudo apt-add-repository -y ppa:fish-shell/release-3
+          sudo apt-add-repository -y ppa:fish-shell/nightly-master
           sudo apt-get update
           sudo apt-get install -y fish
       

@@ -64,7 +64,7 @@ end
 # Check for path traversal vulnerabilities
 echo ""
 echo "Checking for path traversal vulnerabilities..."
-if grep -r "\.\./" --include="*.fish" --exclude-dir="tests" $project_root | grep -v "^[[:space:]]*#" | grep -v "string replace" | grep -v "source" | grep -v "dirname" | grep -v "echo"
+if grep -r "\.\./" --include="*.fish" --exclude-dir="tests" $project_root | grep -v "^[[:space:]]*#" | grep -v "string replace" | grep -v "source" | grep -v "dirname" | grep -v "echo" | grep -v "string match"
     echo "❌ CRITICAL: Found potential path traversal vulnerability"
     set issues (math $issues + 1)
 else

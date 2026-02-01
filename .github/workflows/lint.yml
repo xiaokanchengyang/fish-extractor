@@ -17,6 +17,9 @@ jobs:
     - name: Install Fish shell
       run: |
         sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo apt-add-repository -y ppa:fish-shell/nightly-master
+        sudo apt-get update
         sudo apt-get install -y fish
         
     - name: Install shellcheck

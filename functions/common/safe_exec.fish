@@ -10,7 +10,7 @@ function __fish_pack_safe_exec --description 'Execute command safely without eva
 
     # Ensure command exists
     if not command -q "$cmd"
-        __fish_archive_log error "Command not found: $cmd"
+        __fish_pack_log error "Command not found: $cmd"
         return 127
     end
 
@@ -57,7 +57,7 @@ function __fish_pack_build_tar_command --description 'Build tar command with com
     # Add compression based on type
     switch $compression
         case gzip gz
-            if __fish_archive_has_command pigz; and test $threads -gt 1
+            if __fish_pack_has_command pigz; and test $threads -gt 1
                 # Use pigz for parallel compression
                 if test "$operation" = compress
                     set -a tar_args --use-compress-program="pigz -p $threads"
@@ -69,7 +69,7 @@ function __fish_pack_build_tar_command --description 'Build tar command with com
             end
 
         case bzip2 bz2
-            if __fish_archive_has_command pbzip2; and test $threads -gt 1
+            if __fish_pack_has_command pbzip2; and test $threads -gt 1
                 # Use pbzip2 for parallel compression
                 if test "$operation" = compress
                     set -a tar_args --use-compress-program="pbzip2 -p$threads"
@@ -81,7 +81,7 @@ function __fish_pack_build_tar_command --description 'Build tar command with com
             end
 
         case xz
-            if __fish_archive_has_command pxz; and test $threads -gt 1
+            if __fish_pack_has_command pxz; and test $threads -gt 1
                 # Use pxz for parallel compression
                 set -a tar_args --use-compress-program="pxz -T $threads"
             else
@@ -125,7 +125,7 @@ function __fish_pack_exec_with_progress --description 'Execute command with prog
 
     if test $size -gt 10485760 # 10MB
         # Execute command and pipe to progress bar
-        $cmd | __fish_archive_show_progress_bar $size
+        $cmd | __fish_pack_show_progress_bar $size
     else
         # Execute directly for small files
         $cmd

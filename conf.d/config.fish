@@ -1,11 +1,11 @@
-# Fish Archive Manager plugin initialization for fish shell (fish 4.12+)
+# Fish Archive Manager plugin initialization for fish shell (fish 4.1.2+)
 # Sets up default configuration and creates command aliases
 
 # Prevent double initialization
-if set -q __fish_archive_initialized
+if set -q __fish_pack_initialized
     return
 end
-set -g __fish_archive_initialized 1
+set -g __fish_pack_initialized 1
 
 # ============================================================================
 # Default Configuration
@@ -103,8 +103,8 @@ end
 # ============================================================================
 
 # Uncomment to check environment on shell startup (useful for debugging)
-# if not set -q __fish_archive_doctor_run
-#     set -g __fish_archive_doctor_run 1
+# if not set -q __fish_pack_doctor_run
+#     set -g __fish_pack_doctor_run 1
 #     if not has_command tar; or not has_command gzip
 #         echo "⚠️  Fish Archive Manager: Missing required tools. Run 'doctor' for details." >&2
 #     end

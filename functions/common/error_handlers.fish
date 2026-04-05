@@ -27,7 +27,7 @@ function __fish_pack_handle_error --description 'Handle errors with proper clean
     set -l cleanup_func $argv[3]
 
     # Log error
-    __fish_archive_log error "$error_msg (exit code: $exit_code)"
+    __fish_pack_log error "$error_msg (exit code: $exit_code)"
 
     # Run cleanup if provided
     if test -n "$cleanup_func"
@@ -65,12 +65,12 @@ function __fish_pack_safe_operation --description 'Perform operation with rollba
     set -l rollback $argv[4]
     set -l post_check $argv[5]
 
-    __fish_archive_log info "Starting $operation_name..."
+    __fish_pack_log info "Starting $operation_name..."
 
     # Pre-check
     if test -n "$pre_check"
         eval $pre_check; or begin
-            __fish_archive_log error "$operation_name pre-check failed"
+            __fish_pack_log error "$operation_name pre-check failed"
             return 1
         end
     end
@@ -80,7 +80,7 @@ function __fish_pack_safe_operation --description 'Perform operation with rollba
     set -l result $status
 
     if test $result -ne 0
-        __fish_archive_log error "$operation_name failed, rolling back..."
+        __fish_pack_log error "$operation_name failed, rolling back..."
         if test -n "$rollback"
             eval $rollback
         end
@@ -90,7 +90,7 @@ function __fish_pack_safe_operation --description 'Perform operation with rollba
     # Post-check
     if test -n "$post_check"
         eval $post_check; or begin
-            __fish_archive_log warn "$operation_name post-check failed"
+            __fish_pack_log warn "$operation_name post-check failed"
             if test -n "$rollback"
                 eval $rollback
             end
@@ -98,7 +98,7 @@ function __fish_pack_safe_operation --description 'Perform operation with rollba
         end
     end
 
-    __fish_archive_log info "$operation_name completed successfully"
+    __fish_pack_log info "$operation_name completed successfully"
     return 0
 end
 
@@ -136,7 +136,7 @@ function __fish_pack_ensure_directory --description 'Ensure directory exists wit
 
     # Verify it's writable
     if not test -w "$dir"
-        __fish_archive_log error "Directory not writable: $dir"
+        __fish_pack_log error "Directory not writable: $dir"
         return 1
     end
 
@@ -152,28 +152,28 @@ function __fish_pack_validate_operation --description 'Validate operation prereq
             case 'writable:*'
                 set -l path (string replace 'writable:' '' -- $req)
                 if not test -w "$path"
-                    __fish_archive_log error "$operation requires write access to: $path"
+                    __fish_pack_log error "$operation requires write access to: $path"
                     return 1
                 end
 
             case 'readable:*'
                 set -l path (string replace 'readable:' '' -- $req)
                 if not test -r "$path"
-                    __fish_archive_log error "$operation requires read access to: $path"
+                    __fish_pack_log error "$operation requires read access to: $path"
                     return 1
                 end
 
             case 'exists:*'
                 set -l path (string replace 'exists:' '' -- $req)
                 if not test -e "$path"
-                    __fish_archive_log error "$operation requires file/directory to exist: $path"
+                    __fish_pack_log error "$operation requires file/directory to exist: $path"
                     return 1
                 end
 
             case 'command:*'
                 set -l cmd (string replace 'command:' '' -- $req)
                 if not command -q "$cmd"
-                    __fish_archive_log error "$operation requires command: $cmd"
+                    __fish_pack_log error "$operation requires command: $cmd"
                     return 1
                 end
 
@@ -181,7 +181,7 @@ function __fish_pack_validate_operation --description 'Validate operation prereq
                 set -l required_mb (string replace 'space:' '' -- $req)
                 set -l available_mb (df -m . | tail -1 | awk '{print $4}')
                 if test $available_mb -lt $required_mb
-                    __fish_archive_log error "$operation requires "$required_mb"MB free space (available: "$available_mb"MB)"
+                    __fish_pack_log error "$operation requires "$required_mb"MB free space (available: "$available_mb"MB)"
                     return 1
                 end
         end

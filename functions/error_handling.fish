@@ -1,4 +1,4 @@
-# Error handling functions for Fish Archive Manager (fish 4.12+)
+# Error handling functions for Fish Archive Manager (fish 4.1.2+)
 # Provides unified error handling, logging, and exit code management
 
 # ============================================================================

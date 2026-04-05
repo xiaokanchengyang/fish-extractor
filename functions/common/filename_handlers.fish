@@ -9,7 +9,7 @@ function __fish_pack_process_files --description 'Process files safely with spec
     for file in $files
         # Skip if file doesn't exist
         if not test -e "$file"
-            __fish_archive_log warn "File not found: $file"
+            __fish_pack_log warn "File not found: $file"
             continue
         end
 
@@ -112,25 +112,25 @@ function __fish_pack_validate_filename --description 'Validate filename for safe
 
     # Check for null bytes (serious security issue)
     if string match -q '*\0*' -- "$filename"
-        __fish_archive_log error "Filename contains null byte: $filename"
+        __fish_pack_log error "Filename contains null byte: $filename"
         return 1
     end
 
     # Check for path traversal
     if string match -q '*../*' -- "$filename"; or string match -q '*..*' -- "$filename"
-        __fish_archive_log error "Filename contains path traversal: $filename"
+        __fish_pack_log error "Filename contains path traversal: $filename"
         return 1
     end
 
     # Check for absolute paths if not allowed
     if test "$allow_absolute" != yes; and string match -q '/*' -- "$filename"
-        __fish_archive_log error "Absolute path not allowed: $filename"
+        __fish_pack_log error "Absolute path not allowed: $filename"
         return 1
     end
 
     # Check for control characters
     if string match -r '[\x00-\x1f\x7f]' -- "$filename" >/dev/null
-        __fish_archive_log warn "Filename contains control characters: $filename"
+        __fish_pack_log warn "Filename contains control characters: $filename"
     end
 
     return 0
@@ -197,7 +197,7 @@ function __fish_pack_handle_long_filenames --description 'Handle extremely long 
         set -l truncated_base (string sub -l $truncated_length -- "$base")
 
         set -l new_name "$truncated_base$extension"
-        __fish_archive_log warn "Filename too long, truncated: $filename -> $new_name"
+        __fish_pack_log warn "Filename too long, truncated: $filename -> $new_name"
         echo "$new_name"
     else
         echo "$filename"

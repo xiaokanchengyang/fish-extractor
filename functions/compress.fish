@@ -1,4 +1,4 @@
-# Archive compression command for Fish Archive Manager (fish 4.12+)
+# Archive compression command for Fish Archive Manager (fish 4.1.2+)
 # Supports smart format selection, multiple compression algorithms, and comprehensive options
 
 # Load optimized common functions
@@ -86,8 +86,8 @@ Examples:
     end
 
     # Check Fish compatibility
-    __fish_archive_ensure_fish_compatibility; or begin
-        __fish_archive_log warn "Continuing with limited functionality"
+    __fish_pack_ensure_fish_compatibility; or begin
+        __fish_pack_log warn "Continuing with limited functionality"
     end
 
     # Get output and input files
@@ -95,13 +95,13 @@ Examples:
     set -l input_files $argv[2..-1]
 
     if test -z "$output"
-        __fish_archive_log error "Output file not specified"
+        __fish_pack_log error "Output file not specified"
         echo $usage
         return 2
     end
 
     if test (count $input_files) -eq 0
-        __fish_archive_log error "No input files specified"
+        __fish_pack_log error "No input files specified"
         echo $usage
         return 2
     end
@@ -109,7 +109,7 @@ Examples:
     # Set defaults
     set -l format auto
     set -l level 6
-    set -l threads (__fish_archive_resolve_threads "$_flag_threads")
+    set -l threads (__fish_pack_resolve_threads "$_flag_threads")
     set -l encrypt 0
     set -l password ""
     set -l chdir ""
@@ -213,46 +213,46 @@ Examples:
     # Determine format
     if test "$format" = auto; or test $smart -eq 1
         # Prefer zstd for small, pigz(gzip) for huge unless user specifies
-        set format (__fish_archive_smart_format $input_files)
-        __fish_archive_log info "Selected format: $format"
+        set format (__fish_pack_smart_format $input_files)
+        __fish_pack_log info "Selected format: $format"
     else
         # Detect format from output filename if not specified
-        set -l ext_format (__fish_archive_get_format_from_extension (__fish_archive_get_extension "$output"))
+        set -l ext_format (__fish_pack_get_format_from_extension (__fish_pack_get_extension "$output"))
         if test "$ext_format" != unknown
             set format "$ext_format"
         end
     end
 
     # Validate format
-    if not __fish_archive_validate_format_support "$format" compress
+    if not __fish_pack_validate_format_support "$format" compress
         return 1
     end
 
     # Validate compression level
-    if not __fish_archive_validate_level $level "$format"
-        __fish_archive_log error "Invalid compression level $level for format $format"
+    if not __fish_pack_validate_level $level "$format"
+        __fish_pack_log error "Invalid compression level $level for format $format"
         return 1
     end
 
     # Collect and filter input files
-    set -l valid_files (__fish_archive_collect_and_filter_files $input_files "$include_patterns" "$exclude_patterns")
+    set -l valid_files (__fish_pack_collect_and_filter_files $input_files "$include_patterns" "$exclude_patterns")
     if test $status -ne 0
         return 1
     end
 
     # Handle output file naming
     if test $auto_rename -eq 1; or test $timestamp -eq 1
-        set output (__fish_archive_handle_output_naming "$output" $auto_rename $timestamp)
+        set output (__fish_pack_handle_output_naming "$output" $auto_rename $timestamp)
     end
 
     # Get file sizes for progress and optimization
     set -l total_size 0
     for file in $valid_files
-        set total_size (math "$total_size + "(__fish_archive_get_file_size "$file"))
+        set total_size (math "$total_size + "(__fish_pack_get_file_size "$file"))
     end
 
     # Optimize performance
-    set -l perf_settings (__fish_archive_optimize_performance $total_size "compress")
+    set -l perf_settings (__fish_pack_optimize_performance $total_size "compress")
     set -l optimal_threads (echo $perf_settings | cut -d' ' -f1)
     set -l enable_progress (echo $perf_settings | cut -d' ' -f2)
 
@@ -266,19 +266,19 @@ Examples:
     end
 
     # Prepare compression arguments
-    set -l compress_args (__fish_archive_prepare_compression_args "$format" $level $optimal_threads $solid $encrypt "$password" "$output" $valid_files)
+    set -l compress_args (__fish_pack_prepare_compression_args "$format" $level $optimal_threads $solid $encrypt "$password" "$output" $valid_files)
     if test $status -ne 0
         return 1
     end
 
     # Execute compression
     if test $dry_run -eq 1
-        __fish_archive_log info "Would compress to: $output"
-        __fish_archive_log info "Command: "(string join ' ' $compress_args)
+        __fish_pack_log info "Would compress to: $output"
+        __fish_pack_log info "Command: "(string join ' ' $compress_args)
         return 0
     end
 
-    __fish_archive_log info "Compressing to: $output"
+    __fish_pack_log info "Compressing to: $output"
 
     # Execute with progress and measure
     set -l start_data (__fish_pack_start_measurement)
@@ -295,21 +295,21 @@ Examples:
     set -l cpu_pct (echo $perf_data | cut -d' ' -f2)
 
     if test $cmd_status -eq 0
-        __fish_archive_log info "Successfully compressed to: $output"
+        __fish_pack_log info "Successfully compressed to: $output"
 
         # Generate checksum if requested
         if test $checksum -eq 1
-            __fish_archive_generate_checksum "$output"
+            __fish_pack_generate_checksum "$output"
         end
 
         # Show compression stats and summary
-        set -l compressed_size (__fish_archive_get_file_size "$output")
-        __fish_archive_show_compression_stats $total_size $compressed_size "$format"
-        __fish_archive_show_operation_summary compress "$format" (count $valid_files) $compressed_size $duration "$cpu_pct"
+        set -l compressed_size (__fish_pack_get_file_size "$output")
+        __fish_pack_show_compression_stats $total_size $compressed_size "$format"
+        __fish_pack_show_operation_summary compress "$format" (count $valid_files) $compressed_size $duration "$cpu_pct"
 
         return 0
     else
-        __fish_archive_log error "Failed to compress to: $output"
+        __fish_pack_log error "Failed to compress to: $output"
         return 1
     end
 end

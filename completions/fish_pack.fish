@@ -1,4 +1,4 @@
-# Fish Archive Manager - Completions (fish 4.12+)
+# Fish Archive Manager - Completions (fish 4.1.2+)
 # Optimized completions with modern Fish features
 
 # ============================================================================
@@ -134,7 +134,7 @@ complete -c compressor -n "not __fish_seen_subcommand_from --help" -l compare -d
 # ============================================================================
 
 # Thread count completions based on CPU cores
-function __fish_archive_complete_threads --description 'Complete thread counts based on CPU cores'
+function __fish_pack_complete_threads --description 'Complete thread counts based on CPU cores'
     set -l cores (nproc 2>/dev/null; or sysctl -n hw.ncpu 2>/dev/null; or echo 4)
     for i in (seq 1 $cores)
         echo "$i\t$i threads"
@@ -142,7 +142,7 @@ function __fish_archive_complete_threads --description 'Complete thread counts b
 end
 
 # Format completions based on available tools
-function __fish_archive_complete_formats --description 'Complete available archive formats'
+function __fish_pack_complete_formats --description 'Complete available archive formats'
     echo "tar\tUncompressed tar archive"
     echo "tar.gz\tGzip compressed tar archive"
     echo "tgz\tShort name for tar.gz"
@@ -160,19 +160,19 @@ function __fish_archive_complete_formats --description 'Complete available archi
 end
 
 # Archive file completions
-function __fish_archive_complete_archive_files --description 'Complete archive file names'
+function __fish_pack_complete_archive_files --description 'Complete archive file names'
     # Use modern Fish features for file completion
     for file in *.tar.gz *.tgz *.tar.bz2 *.tbz2 *.tbz *.tar.xz *.txz *.tar.zst *.tzst *.tar.lz4 *.tlz4 *.zip *.7z *.rar 2> /dev/null
     echo "$file"
 end
 end
 # Apply dynamic completions
-complete -c compress -n "__fish_seen_subcommand_from -F --format" -a "(__fish_archive_complete_formats)"
-complete -c compressor -n "__fish_seen_subcommand_from -F --format" -a "(__fish_archive_complete_formats)"
-complete -c extract -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_archive_complete_threads)"
-complete -c extractor -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_archive_complete_threads)"
-complete -c compress -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_archive_complete_threads)"
-complete -c compressor -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_archive_complete_threads)"
+complete -c compress -n "__fish_seen_subcommand_from -F --format" -a "(__fish_pack_complete_formats)"
+complete -c compressor -n "__fish_seen_subcommand_from -F --format" -a "(__fish_pack_complete_formats)"
+complete -c extract -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_pack_complete_threads)"
+complete -c extractor -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_pack_complete_threads)"
+complete -c compress -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_pack_complete_threads)"
+complete -c compressor -n "__fish_seen_subcommand_from -t --threads" -a "(__fish_pack_complete_threads)"
 complete -c extract -n "__fish_seen_subcommand_from -s --strip" -a "1 2 3 4 5"
 complete -c extractor -n "__fish_seen_subcommand_from -s --strip" -a "1 2 3 4 5"
 complete -c compress -n "__fish_seen_subcommand_from -L --level" -a "1 2 3 4 5 6 7 8 9"

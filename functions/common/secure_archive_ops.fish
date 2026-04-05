@@ -59,7 +59,7 @@ function __fish_pack_execute_with_password --description 'Execute archive comman
             return $status
 
         case '*'
-            __fish_archive_log error "Format $format does not support passwords"
+            __fish_pack_log error "Format $format does not support passwords"
             return 1
     end
 end
@@ -82,19 +82,19 @@ function __fish_pack_prepare_secure_extraction --description 'Prepare extraction
     if test -n "$destination"
         if not test -d "$destination"
             mkdir -p "$destination" 2>/dev/null; or begin
-                __fish_archive_log error "Failed to create destination: $destination"
+                __fish_pack_log error "Failed to create destination: $destination"
                 return 1
             end
         end
 
         if not test -w "$destination"
-            __fish_archive_log error "Destination not writable: $destination"
+            __fish_pack_log error "Destination not writable: $destination"
             return 1
         end
     end
 
     # Build extraction command
-    set -l args (__fish_archive_prepare_extraction_args "$format" $options "$archive" "$destination")
+    set -l args (__fish_pack_prepare_extraction_args "$format" $options "$archive" "$destination")
 
     # Execute
     __fish_pack_execute_with_password (echo $args[1]) "$format" "$password" extract $args[2..-1]
@@ -109,7 +109,7 @@ function __fish_pack_prepare_secure_compression --description 'Prepare compressi
     # Validate inputs
     for input in $inputs
         if not test -e "$input"
-            __fish_archive_log error "Input not found: $input"
+            __fish_pack_log error "Input not found: $input"
             return 1
         end
     end
@@ -117,7 +117,7 @@ function __fish_pack_prepare_secure_compression --description 'Prepare compressi
     # Check output directory
     set -l output_dir (dirname "$output")
     if not test -w "$output_dir"
-        __fish_archive_log error "Cannot write to directory: $output_dir"
+        __fish_pack_log error "Cannot write to directory: $output_dir"
         return 1
     end
 
@@ -125,7 +125,7 @@ function __fish_pack_prepare_secure_compression --description 'Prepare compressi
     set -l is_encrypted 0
     test -n "$password"; and set is_encrypted 1
 
-    set -l args (__fish_archive_prepare_compression_args "$format" 6 4 0 $is_encrypted "" "$output" $inputs)
+    set -l args (__fish_pack_prepare_compression_args "$format" 6 4 0 $is_encrypted "" "$output" $inputs)
 
     # Execute
     __fish_pack_execute_with_password (echo $args[1]) "$format" "$password" compress $args[2..-1]
@@ -159,7 +159,7 @@ function __fish_pack_secure_compress --description 'Secure compression wrapper'
         set -l confirm (__fish_pack_read_password "Confirm password: ")
 
         if test "$password" != "$confirm"
-            __fish_archive_log error "Passwords do not match"
+            __fish_pack_log error "Passwords do not match"
             return 1
         end
     end

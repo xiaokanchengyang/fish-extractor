@@ -1,4 +1,4 @@
-# Optimized common functions for Fish Archive Manager (fish 4.12+)
+# Optimized common functions for Fish Archive Manager (fish 4.1.2+)
 # Consolidates shared functionality with modern Fish features
 
 # Load core utilities
@@ -10,7 +10,7 @@ source (dirname (status --current-filename))/safe_exec.fish
 # Enhanced Archive Operation Helpers
 # ============================================================================
 
-function __fish_archive_execute_with_progress --description 'Execute command with enhanced progress handling'
+function __fish_pack_execute_with_progress --description 'Execute command with enhanced progress handling'
     set -l command $argv[1]
     set -l operation $argv[2] # compress or extract
     set -l target $argv[3]
@@ -21,8 +21,8 @@ function __fish_archive_execute_with_progress --description 'Execute command wit
     set -l args $argv[8..-1]
 
     # Check command availability
-    if not __fish_archive_has_command $command
-        __fish_archive_log error "Command not found: $command"
+    if not __fish_pack_has_command $command
+        __fish_pack_log error "Command not found: $command"
         return 127
     end
 
@@ -33,8 +33,8 @@ function __fish_archive_execute_with_progress --description 'Execute command wit
     end
 
     # Execute with progress if enabled
-    if test $progress -eq 1; and __fish_archive_can_show_progress
-        set -l size (__fish_archive_get_file_size "$target")
+    if test $progress -eq 1; and __fish_pack_can_show_progress
+        set -l size (__fish_pack_get_file_size "$target")
         __fish_pack_exec_with_progress $full_command $size
     else
         __fish_pack_safe_exec $full_command
@@ -44,14 +44,14 @@ function __fish_archive_execute_with_progress --description 'Execute command wit
 
     # Enhanced error handling
     if test $exit_code -ne 0
-        __fish_archive_log error "Command failed with exit code $exit_code: $command"
+        __fish_pack_log error "Command failed with exit code $exit_code: $command"
         return $exit_code
     end
 
     return 0
 end
 
-function __fish_archive_prepare_compression_args --description 'Prepare compression arguments with modern Fish features'
+function __fish_pack_prepare_compression_args --description 'Prepare compression arguments with modern Fish features'
     set -l format $argv[1]
     set -l level $argv[2]
     set -l threads $argv[3]
@@ -66,7 +66,7 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
     # Format-specific argument preparation
     switch $format
         case 'tar.gz' tgz
-            if __fish_archive_has_command pigz; and test $threads -gt 1
+            if __fish_pack_has_command pigz; and test $threads -gt 1
                 set -l cmd "pigz -p $threads"
                 if test $level -gt 0
                     set cmd "$cmd -$level"
@@ -81,7 +81,7 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
             end
 
         case 'tar.bz2' tbz2 tbz
-            if __fish_archive_has_command pbzip2; and test $threads -gt 1
+            if __fish_pack_has_command pbzip2; and test $threads -gt 1
                 set -l cmd "pbzip2 -p$threads"
                 if test $level -gt 0
                     set cmd "$cmd -$level"
@@ -142,7 +142,7 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
             set -a args -t7z
 
         case '*'
-            __fish_archive_log error "Unsupported format: $format"
+            __fish_pack_log error "Unsupported format: $format"
             return 1
     end
 
@@ -152,7 +152,7 @@ function __fish_archive_prepare_compression_args --description 'Prepare compress
     printf '%s\n' $args
 end
 
-function __fish_archive_prepare_extraction_args --description 'Prepare extraction arguments with modern Fish features'
+function __fish_pack_prepare_extraction_args --description 'Prepare extraction arguments with modern Fish features'
     set -l format $argv[1]
     set -l threads $argv[2]
     set -l password $argv[3]
@@ -167,14 +167,14 @@ function __fish_archive_prepare_extraction_args --description 'Prepare extractio
     # Format-specific argument preparation
     switch $format
         case 'tar.gz' tgz
-            if __fish_archive_has_command pigz; and test $threads -gt 1
+            if __fish_pack_has_command pigz; and test $threads -gt 1
                 set -a args tar -I "pigz -p $threads"
             else
                 set -a args tar -xzf
             end
 
         case 'tar.bz2' tbz2 tbz
-            if __fish_archive_has_command pbzip2; and test $threads -gt 1
+            if __fish_pack_has_command pbzip2; and test $threads -gt 1
                 set -a args tar -I "pbzip2 -p$threads"
             else
                 set -a args tar -xjf
@@ -236,7 +236,7 @@ end
 # Enhanced File Processing Functions
 # ============================================================================
 
-function __fish_archive_collect_and_filter_files --description 'Collect and filter files with enhanced pattern matching'
+function __fish_pack_collect_and_filter_files --description 'Collect and filter files with enhanced pattern matching'
     set -l inputs $argv[1..-3]
     set -l include_patterns $argv[-2]
     set -l exclude_patterns $argv[-1]
@@ -300,7 +300,7 @@ function __fish_archive_collect_and_filter_files --description 'Collect and filt
     echo $file_list
 end
 
-function __fish_archive_validate_inputs --description 'Validate input files with comprehensive checks'
+function __fish_pack_validate_inputs --description 'Validate input files with comprehensive checks'
     set -l inputs $argv
 
     set -l valid_inputs
@@ -318,13 +318,13 @@ function __fish_archive_validate_inputs --description 'Validate input files with
 
     if test (count $errors) -gt 0
         for error in $errors
-            __fish_archive_log error $error
+            __fish_pack_log error $error
         end
         return 1
     end
 
     if test (count $valid_inputs) -eq 0
-        __fish_archive_log error "No valid input files found"
+        __fish_pack_log error "No valid input files found"
         return 1
     end
 
@@ -335,7 +335,7 @@ end
 # Enhanced Archive Validation Functions
 # ============================================================================
 
-function __fish_archive_test_archive_integrity --description 'Test archive integrity with format-specific methods'
+function __fish_pack_test_archive_integrity --description 'Test archive integrity with format-specific methods'
     set -l archive $argv[1]
     set -l format $argv[2]
 
@@ -358,7 +358,7 @@ function __fish_archive_test_archive_integrity --description 'Test archive integ
     end
 end
 
-function __fish_archive_list_archive_contents --description 'List archive contents with format-specific methods'
+function __fish_pack_list_archive_contents --description 'List archive contents with format-specific methods'
     set -l archive $argv[1]
     set -l format $argv[2]
 
@@ -385,7 +385,7 @@ end
 # Enhanced Progress and Status Reporting
 # ============================================================================
 
-function __fish_archive_show_operation_summary --description 'Show operation summary with modern formatting'
+function __fish_pack_show_operation_summary --description 'Show operation summary with modern formatting'
     set -l operation $argv[1] # compress or extract
     set -l format $argv[2]
     set -l input_count $argv[3]
@@ -396,41 +396,41 @@ function __fish_archive_show_operation_summary --description 'Show operation sum
     set -l operation_name (string capitalize $operation)
     set -l format_display (string upper $format)
 
-    __fish_archive_log info "$operation_name completed successfully"
-    __fish_archive_log info "Format: $format_display"
-    __fish_archive_log info "Files processed: $input_count"
+    __fish_pack_log info "$operation_name completed successfully"
+    __fish_pack_log info "Format: $format_display"
+    __fish_pack_log info "Files processed: $input_count"
 
     if test $output_size -gt 0
-        set -l size_human (__fish_archive_human_size $output_size)
-        __fish_archive_log info "Output size: $size_human"
+        set -l size_human (__fish_pack_human_size $output_size)
+        __fish_pack_log info "Output size: $size_human"
     end
 
     if test $duration -gt 0
-        __fish_archive_log info "Duration: "$duration"s"
+        __fish_pack_log info "Duration: "$duration"s"
         if test $output_size -gt 0
             set -l throughput (math -s2 "$output_size / $duration / 1048576")
-            __fish_archive_log info "Throughput: "$throughput"MB/s"
+            __fish_pack_log info "Throughput: "$throughput"MB/s"
         end
     end
 
     if test -n "$cpu_pct"
-        __fish_archive_log info "Estimated CPU utilization: "$cpu_pct"%"
+        __fish_pack_log info "Estimated CPU utilization: "$cpu_pct"%"
     end
 end
 
-function __fish_archive_show_compression_stats --description 'Show compression statistics'
+function __fish_pack_show_compression_stats --description 'Show compression statistics'
     set -l original_size $argv[1]
     set -l compressed_size $argv[2]
     set -l format $argv[3]
 
     if test $original_size -gt 0; and test $compressed_size -gt 0
         set -l ratio (math -s1 "100 - ($compressed_size * 100 / $original_size)")
-        set -l original_human (__fish_archive_human_size $original_size)
-        set -l compressed_human (__fish_archive_human_size $compressed_size)
+        set -l original_human (__fish_pack_human_size $original_size)
+        set -l compressed_human (__fish_pack_human_size $compressed_size)
 
-        __fish_archive_log info "Compression ratio: $ratio%"
-        __fish_archive_log info "Original size: $original_human"
-        __fish_archive_log info "Compressed size: $compressed_human"
+        __fish_pack_log info "Compression ratio: $ratio%"
+        __fish_pack_log info "Original size: $original_human"
+        __fish_pack_log info "Compressed size: $compressed_human"
     end
 end
 
@@ -438,7 +438,7 @@ end
 # Enhanced Error Handling and Recovery
 # ============================================================================
 
-function __fish_archive_handle_operation_error --description 'Handle operation errors with recovery suggestions'
+function __fish_pack_handle_operation_error --description 'Handle operation errors with recovery suggestions'
     set -l operation $argv[1]
     set -l format $argv[2]
     set -l error_code $argv[3]
@@ -462,40 +462,40 @@ function __fish_archive_handle_operation_error --description 'Handle operation e
             set suggestions "Check system resources and try again"
     end
 
-    __fish_archive_log error "$operation failed with error code $error_code"
+    __fish_pack_log error "$operation failed with error code $error_code"
     for detail in $details
-        __fish_archive_log error $detail
+        __fish_pack_log error $detail
     end
 
     if test -n "$suggestions"
-        __fish_archive_log info "Suggestions: $suggestions"
+        __fish_pack_log info "Suggestions: $suggestions"
     end
 end
 
 # ============================================================================
-# Modern Fish 4.12+ Integration Helpers
+# Modern Fish 4.1.2+ Integration Helpers
 # ============================================================================
 
-function __fish_archive_ensure_fish_compatibility --description 'Ensure Fish 4.12+ compatibility'
-    if not __fish_archive_is_fish_4_12_plus
-        __fish_archive_log warn "Fish version 4.12+ recommended for optimal performance"
-        __fish_archive_log info "Current version: "(fish --version | string match -r '\d+\.\d+')
+function __fish_pack_ensure_fish_compatibility --description 'Ensure Fish 4.1.2+ compatibility'
+    if not __fish_pack_is_fish_4_1_2_plus
+        __fish_pack_log warn "Fish version 4.1.2+ recommended for optimal performance"
+        __fish_pack_log info "Current version: "(fish --version | string match -r '\d+\.\d+\.?\d*')
         return 1
     end
     return 0
 end
 
-function __fish_archive_optimize_performance --description 'Optimize performance based on system capabilities'
+function __fish_pack_optimize_performance --description 'Optimize performance based on system capabilities'
     set -l file_size $argv[1]
     set -l operation $argv[2] # compress or extract
 
     # Check for parallel tools
-    set -l has_pigz (__fish_archive_has_command pigz; and echo 1; or echo 0)
-    set -l has_pbzip2 (__fish_archive_has_command pbzip2; and echo 1; or echo 0)
-    set -l has_pv (__fish_archive_has_command pv; and echo 1; or echo 0)
+    set -l has_pigz (__fish_pack_has_command pigz; and echo 1; or echo 0)
+    set -l has_pbzip2 (__fish_pack_has_command pbzip2; and echo 1; or echo 0)
+    set -l has_pv (__fish_pack_has_command pv; and echo 1; or echo 0)
 
     # Optimize thread count
-    set -l optimal_threads (__fish_archive_optimal_threads $file_size)
+    set -l optimal_threads (__fish_pack_optimal_threads $file_size)
 
     # Enable progress for large files
     set -l enable_progress 0
@@ -507,10 +507,10 @@ function __fish_archive_optimize_performance --description 'Optimize performance
 end
 
 # ============================================================================
-# Helper Functions (Moved from archive_manager.fish)
+# Helper Functions (Moved from fish_pack.fish)
 # ============================================================================
 
-function __fish_archive_handle_destination_naming --description 'Handle destination naming with auto-rename and timestamp'
+function __fish_pack_handle_destination_naming --description 'Handle destination naming with auto-rename and timestamp'
     set -l base_dest $argv[1]
     set -l auto_rename $argv[2]
     set -l timestamp $argv[3]
@@ -534,7 +534,7 @@ function __fish_archive_handle_destination_naming --description 'Handle destinat
     echo $final_dest
 end
 
-function __fish_archive_handle_output_naming --description 'Handle output file naming with auto-rename and timestamp'
+function __fish_pack_handle_output_naming --description 'Handle output file naming with auto-rename and timestamp'
     set -l base_output $argv[1]
     set -l auto_rename $argv[2]
     set -l timestamp $argv[3]
@@ -543,15 +543,15 @@ function __fish_archive_handle_output_naming --description 'Handle output file n
 
     # Add timestamp if requested
     if test $timestamp -eq 1
-        set -l basename (__fish_archive_basename_without_ext "$base_output")
-        set -l extension (__fish_archive_get_extension "$base_output")
+        set -l basename (__fish_pack_basename_without_ext "$base_output")
+        set -l extension (__fish_pack_get_extension "$base_output")
         set final_output "$basename-"(date +%Y%m%d_%H%M%S)"$extension"
     end
 
     # Handle auto-rename if output exists
     if test $auto_rename -eq 1; and test -e "$final_output"
-        set -l basename (__fish_archive_basename_without_ext "$final_output")
-        set -l extension (__fish_archive_get_extension "$final_output")
+        set -l basename (__fish_pack_basename_without_ext "$final_output")
+        set -l extension (__fish_pack_get_extension "$final_output")
         set -l counter 1
         while test -e "$basename-$counter$extension"
             set counter (math "$counter + 1")
@@ -562,23 +562,23 @@ function __fish_archive_handle_output_naming --description 'Handle output file n
     echo $final_output
 end
 
-function __fish_archive_generate_checksum --description 'Generate checksum file'
+function __fish_pack_generate_checksum --description 'Generate checksum file'
     set -l target $argv[1]
 
     if test -f "$target"
-        set -l sha256_hash (__fish_archive_calculate_hash "$target" "sha256")
+        set -l sha256_hash (__fish_pack_calculate_hash "$target" "sha256")
         if test $status -eq 0
             echo "$sha256_hash  "(basename "$target") >"$target.sha256"
-            __fish_archive_log info "Generated checksum: $target.sha256"
+            __fish_pack_log info "Generated checksum: $target.sha256"
         end
     else if test -d "$target"
         # Generate checksum for directory contents
         find "$target" -type f -exec sha256sum {} \; >"$target.sha256"
-        __fish_archive_log info "Generated checksum: $target.sha256"
+        __fish_pack_log info "Generated checksum: $target.sha256"
     end
 end
 
-function __fish_archive_run_diagnostics --description 'Run comprehensive system diagnostics'
+function __fish_pack_run_diagnostics --description 'Run comprehensive system diagnostics'
     set -l verbose $argv[1]
     set -l quiet $argv[2]
     set -l fix $argv[3]
@@ -591,90 +591,90 @@ function __fish_archive_run_diagnostics --description 'Run comprehensive system 
 
     # System information
     if test $verbose -eq 1; and test $quiet -eq 0
-        __fish_archive_log info "=== Fish Archive Manager Diagnostic Report ==="
-        __fish_archive_log info "Version: "(__fish_archive_version)
-        __fish_archive_log info "Fish version: "(fish --version)
-        __fish_archive_log info "OS: "(uname -s)
-        __fish_archive_log info "Architecture: "(uname -m)
-        __fish_archive_log info "CPU cores: "(nproc 2>/dev/null; or sysctl -n hw.ncpu 2>/dev/null; or echo "unknown")
-        __fish_archive_log info "Date: "(date)
+        __fish_pack_log info "=== Fish Archive Manager Diagnostic Report ==="
+        __fish_pack_log info "Version: "(__fish_pack_version)
+        __fish_pack_log info "Fish version: "(fish --version)
+        __fish_pack_log info "OS: "(uname -s)
+        __fish_pack_log info "Architecture: "(uname -m)
+        __fish_pack_log info "CPU cores: "(nproc 2>/dev/null; or sysctl -n hw.ncpu 2>/dev/null; or echo "unknown")
+        __fish_pack_log info "Date: "(date)
         echo ""
     end
 
     # Check required tools
-    __fish_archive_log info "=== Required Tools ==="
+    __fish_pack_log info "=== Required Tools ==="
     set -l required_tools file tar gzip bzip2 xz unzip zip
     set -l missing_required
 
     for tool in $required_tools
-        if __fish_archive_has_command $tool
-            __fish_archive_log info "✓ $tool"
+        if __fish_pack_has_command $tool
+            __fish_pack_log info "✓ $tool"
         else
-            __fish_archive_log error "✗ $tool (missing)"
+            __fish_pack_log error "✗ $tool (missing)"
             set -a missing_required $tool
         end
     end
 
     # Check important tools
-    __fish_archive_log info "=== Important Tools ==="
+    __fish_pack_log info "=== Important Tools ==="
     set -l important_tools 7z lz4 bsdtar
     set -l missing_important
 
     for tool in $important_tools
-        if __fish_archive_has_command $tool
-            __fish_archive_log info "✓ $tool"
+        if __fish_pack_has_command $tool
+            __fish_pack_log info "✓ $tool"
         else
-            __fish_archive_log warn "✗ $tool (missing - extended functionality)"
+            __fish_pack_log warn "✗ $tool (missing - extended functionality)"
             set -a missing_important $tool
         end
     end
 
     # Check optional tools
     if test $verbose -eq 1
-        __fish_archive_log info "=== Optional Tools ==="
+        __fish_pack_log info "=== Optional Tools ==="
         set -l optional_tools unrar pv lzip lzop brotli pigz pbzip2 pxz split
 
         for tool in $optional_tools
-            if __fish_archive_has_command $tool
-                __fish_archive_log info "✓ $tool"
+            if __fish_pack_has_command $tool
+                __fish_pack_log info "✓ $tool"
             else
-                __fish_archive_log debug "✗ $tool (missing - performance enhancement)"
+                __fish_pack_log debug "✗ $tool (missing - performance enhancement)"
             end
         end
     end
 
     # Configuration
-    __fish_archive_log info "=== Configuration ==="
-    __fish_archive_log info "Color: $FISH_ARCHIVE_COLOR"
-    __fish_archive_log info "Progress: $FISH_ARCHIVE_PROGRESS"
-    __fish_archive_log info "Default threads: $FISH_ARCHIVE_DEFAULT_THREADS"
-    __fish_archive_log info "Log level: $FISH_ARCHIVE_LOG_LEVEL"
+    __fish_pack_log info "=== Configuration ==="
+    __fish_pack_log info "Color: $FISH_ARCHIVE_COLOR"
+    __fish_pack_log info "Progress: $FISH_ARCHIVE_PROGRESS"
+    __fish_pack_log info "Default threads: $FISH_ARCHIVE_DEFAULT_THREADS"
+    __fish_pack_log info "Log level: $FISH_ARCHIVE_LOG_LEVEL"
 
     # Format support
     if test $verbose -eq 1
-        __fish_archive_log info "=== Format Support ==="
+        __fish_pack_log info "=== Format Support ==="
         set -l formats tar.gz tar.bz2 tar.xz tar.zst tar.lz4 zip 7z rar
 
         for format in $formats
-            if __fish_archive_validate_format_support "$format" extract
-                __fish_archive_log info "✓ $format (extract)"
+            if __fish_pack_validate_format_support "$format" extract
+                __fish_pack_log info "✓ $format (extract)"
             else
-                __fish_archive_log warn "✗ $format (extract)"
+                __fish_pack_log warn "✗ $format (extract)"
             end
         end
     end
 
     # Fix suggestions
     if test $fix -eq 1; and test (count $missing_required) -gt 0
-        __fish_archive_log info "=== Installation Suggestions ==="
-        __fish_archive_log info "Arch Linux: sudo pacman -S "(string join ' ' $missing_required)
-        __fish_archive_log info "Ubuntu/Debian: sudo apt-get install "(string join ' ' $missing_required)
-        __fish_archive_log info "macOS: brew install "(string join ' ' $missing_required)
+        __fish_pack_log info "=== Installation Suggestions ==="
+        __fish_pack_log info "Arch Linux: sudo pacman -S "(string join ' ' $missing_required)
+        __fish_pack_log info "Ubuntu/Debian: sudo apt-get install "(string join ' ' $missing_required)
+        __fish_pack_log info "macOS: brew install "(string join ' ' $missing_required)
     end
 
     # Export report
     if test $export -eq 1
-        __fish_archive_log info "=== Report exported to: $report_file ==="
+        __fish_pack_log info "=== Report exported to: $report_file ==="
     end
 
     # Return status

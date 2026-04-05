@@ -1,4 +1,4 @@
-# Format handling functions for Fish Archive Manager (fish 4.12+)
+# Format handling functions for Fish Archive Manager (fish 4.1.2+)
 # Provides unified format detection, validation, and command selection
 
 # Load error handling

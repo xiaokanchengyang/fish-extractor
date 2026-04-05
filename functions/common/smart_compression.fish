@@ -1,4 +1,4 @@
-# Smart compression logic for Fish Archive Manager (fish 4.12+)
+# Smart compression logic for Fish Archive Manager (fish 4.1.2+)
 # Analyzes content to automatically select optimal compression format
 
 # Load platform helpers

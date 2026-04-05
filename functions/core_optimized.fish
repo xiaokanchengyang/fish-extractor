@@ -1,11 +1,11 @@
-# Optimized core utilities for Fish Archive Manager (fish 4.12+)
-# Uses modern Fish 4.12+ features for better performance and maintainability
+# Optimized core utilities for Fish Archive Manager (fish 4.1.2+)
+# Uses modern Fish 4.1.2+ features for better performance and maintainability
 
 # ============================================================================
-# Modern Fish 4.12+ Utilities
+# Modern Fish 4.1.2+ Utilities
 # ============================================================================
 
-function __fish_archive_version --description 'Get Fish Archive Manager version'
+function __fish_pack_version --description 'Get Fish Archive Manager version'
     if test -f (dirname (status --current-filename))/../VERSION
         cat (dirname (status --current-filename))/../VERSION
     else
@@ -13,13 +13,18 @@ function __fish_archive_version --description 'Get Fish Archive Manager version'
     end
 end
 
-function __fish_archive_is_fish_4_12_plus --description 'Check if Fish version is 4.12 or higher'
-    set -l fish_ver (fish --version | string match -r '\d+\.\d+')
-    set -l major (string split . -- $fish_ver)[1]
-    set -l minor (string split . -- $fish_ver)[2]
+function __fish_pack_is_fish_4_1_2_plus --description 'Check if Fish version is 4.1.2 or higher'
+    set -l fish_ver (fish --version | string match -r '\d+\.\d+\.?\d*')
+    set -l parts (string split . -- $fish_ver)
+    set -l major $parts[1]
+    set -l minor $parts[2]
+    set -l patch $parts[3]
+    test -n "$patch"; or set patch 0
 
     test $major -gt 4; or begin
-        test $major -eq 4; and test $minor -ge 12
+        test $major -eq 4; and test $minor -gt 1; or begin
+            test $major -eq 4; and test $minor -eq 1; and test $patch -ge 2
+        end
     end
 end
 
@@ -27,7 +32,7 @@ end
 # Enhanced Color and Output Management
 # ============================================================================
 
-function __fish_archive_supports_color --description 'Check if colored output is enabled'
+function __fish_pack_supports_color --description 'Check if colored output is enabled'
     switch "$FISH_ARCHIVE_COLOR"
         case never
             return 1
@@ -38,11 +43,11 @@ function __fish_archive_supports_color --description 'Check if colored output is
     end
 end
 
-function __fish_archive_colorize --description 'Apply color to text if enabled'
+function __fish_pack_colorize --description 'Apply color to text if enabled'
     set -l color $argv[1]
     set -l text $argv[2..-1]
 
-    if __fish_archive_supports_color
+    if __fish_pack_supports_color
         set_color $color
         string join ' ' $text
         set_color normal
@@ -55,7 +60,7 @@ end
 # Enhanced Logging System with Modern Fish Features
 # ============================================================================
 
-function __fish_archive_log --description 'Structured logging with levels and modern Fish features'
+function __fish_pack_log --description 'Structured logging with levels and modern Fish features'
     set -l level $argv[1]
     set -l msg $argv[2..-1]
 
@@ -89,7 +94,7 @@ function __fish_archive_log --description 'Structured logging with levels and mo
     # Format message with modern string operations
     set -l formatted_msg (string join ' ' -- "[$level]" $msg)
 
-    if __fish_archive_supports_color
+    if __fish_pack_supports_color
         set_color $color
         echo $formatted_msg >&2
         set_color normal
@@ -102,7 +107,7 @@ end
 # Enhanced Command and Tool Management
 # ============================================================================
 
-function __fish_archive_require_commands --description 'Verify required commands exist with better error reporting'
+function __fish_pack_require_commands --description 'Verify required commands exist with better error reporting'
     set -l missing
     set -l available
 
@@ -115,15 +120,15 @@ function __fish_archive_require_commands --description 'Verify required commands
     end
 
     if test (count $missing) -gt 0
-        __fish_archive_log error "Missing required commands: "(string join ', ' $missing)
+        __fish_pack_log error "Missing required commands: "(string join ', ' $missing)
         if test (count $available) -gt 0
-            __fish_archive_log info "Available commands: "(string join ', ' $available)
+            __fish_pack_log info "Available commands: "(string join ', ' $available)
         end
         return 1
     end
 end
 
-function __fish_archive_best_available --description 'Return first available command from list with fallback info'
+function __fish_pack_best_available --description 'Return first available command from list with fallback info'
     set -l available
     set -l unavailable
 
@@ -136,11 +141,11 @@ function __fish_archive_best_available --description 'Return first available com
         end
     end
 
-    __fish_archive_log debug "No commands available from: "(string join ', ' $unavailable)
+    __fish_pack_log debug "No commands available from: "(string join ', ' $unavailable)
     return 1
 end
 
-function __fish_archive_has_command --description 'Check if command is available'
+function __fish_pack_has_command --description 'Check if command is available'
     command -q $argv[1]
 end
 
@@ -148,22 +153,22 @@ end
 # Enhanced Progress Display with Modern Features
 # ============================================================================
 
-function __fish_archive_can_show_progress --description 'Check if progress display is enabled'
+function __fish_pack_can_show_progress --description 'Check if progress display is enabled'
     switch "$FISH_ARCHIVE_PROGRESS"
         case never
             return 1
         case always
-            __fish_archive_has_command pv; and return 0
+            __fish_pack_has_command pv; and return 0
             return 1
         case auto '*'
-            if isatty stdout; and __fish_archive_has_command pv
+            if isatty stdout; and __fish_pack_has_command pv
                 return 0
             end
             return 1
     end
 end
 
-function __fish_archive_show_spinner --description 'Display modern spinner animation'
+function __fish_pack_show_spinner --description 'Display modern spinner animation'
     set -l pid $argv[1]
     set -l msg $argv[2..-1]
 
@@ -178,7 +183,7 @@ function __fish_archive_show_spinner --description 'Display modern spinner anima
     set -l frame_count (count $frames)
 
     while kill -0 $pid 2>/dev/null
-        printf '\r%s %s' (__fish_archive_colorize cyan $msg) "$frames[$idx]"
+        printf '\r%s %s' (__fish_pack_colorize cyan $msg) "$frames[$idx]"
         sleep 0.1
         set idx (math "($idx % $frame_count) + 1")
     end
@@ -186,10 +191,10 @@ function __fish_archive_show_spinner --description 'Display modern spinner anima
     printf '\r%-60s\r' ' ' # Clear line
 end
 
-function __fish_archive_show_progress_bar --description 'Show progress bar with enhanced pv integration'
+function __fish_pack_show_progress_bar --description 'Show progress bar with enhanced pv integration'
     set -l size $argv[1]
 
-    if __fish_archive_can_show_progress
+    if __fish_pack_can_show_progress
         # Enhanced pv with better formatting
         pv -p -t -e -r -a -b -s $size --format 'ETA: %E | Rate: %R | Avg: %a | %p%'
     else
@@ -202,7 +207,7 @@ end
 # Enhanced Thread/Concurrency Management
 # ============================================================================
 
-function __fish_archive_resolve_threads --description 'Resolve thread count with intelligent defaults'
+function __fish_pack_resolve_threads --description 'Resolve thread count with intelligent defaults'
     set -l requested $argv[1]
 
     if test -n "$requested"; and test "$requested" -gt 0 2>/dev/null
@@ -215,9 +220,9 @@ function __fish_archive_resolve_threads --description 'Resolve thread count with
     end
 end
 
-function __fish_archive_optimal_threads --description 'Get optimal thread count based on file size and system'
+function __fish_pack_optimal_threads --description 'Get optimal thread count based on file size and system'
     set -l file_size $argv[1]
-    set -l max_threads (__fish_archive_resolve_threads "")
+    set -l max_threads (__fish_pack_resolve_threads "")
 
     # Intelligent thread scaling based on file size
     if test $file_size -lt 10485760 # < 10MB
@@ -235,7 +240,7 @@ end
 # Enhanced Path and File Utilities with Modern Fish Features
 # ============================================================================
 
-function __fish_archive_sanitize_path --description 'Expand and normalize file path with modern Fish features'
+function __fish_pack_sanitize_path --description 'Expand and normalize file path with modern Fish features'
     set -l path $argv[1]
 
     # Use modern Fish path expansion
@@ -248,7 +253,7 @@ function __fish_archive_sanitize_path --description 'Expand and normalize file p
     string replace -r '/$' '' -- $normalized
 end
 
-function __fish_archive_get_extension --description 'Extract file extension with support for double extensions'
+function __fish_pack_get_extension --description 'Extract file extension with support for double extensions'
     set -l file $argv[1]
 
     # Use modern Fish string operations
@@ -267,10 +272,10 @@ function __fish_archive_get_extension --description 'Extract file extension with
     end
 end
 
-function __fish_archive_get_mime_type --description 'Get MIME type using modern Fish features'
+function __fish_pack_get_mime_type --description 'Get MIME type using modern Fish features'
     set -l file $argv[1]
 
-    if __fish_archive_has_command file
+    if __fish_pack_has_command file
         # Use modern Fish string operations
         file -b --mime-type "$file" 2>/dev/null | string trim
     else
@@ -278,11 +283,11 @@ function __fish_archive_get_mime_type --description 'Get MIME type using modern 
     end
 end
 
-function __fish_archive_basename_without_ext --description 'Get basename without extension using modern Fish features'
+function __fish_pack_basename_without_ext --description 'Get basename without extension using modern Fish features'
     set -l file $argv[1]
 
     set -l basename (basename -- $file)
-    set -l ext (__fish_archive_get_extension $file)
+    set -l ext (__fish_pack_get_extension $file)
 
     if test -n "$ext"
         string replace -r (string escape -- $ext)'$' '' -- $basename
@@ -291,14 +296,14 @@ function __fish_archive_basename_without_ext --description 'Get basename without
     end
 end
 
-function __fish_archive_default_extract_dir --description 'Generate default extraction directory name'
+function __fish_pack_default_extract_dir --description 'Generate default extraction directory name'
     set -l archive $argv[1]
 
-    set -l basename (__fish_archive_basename_without_ext $archive)
+    set -l basename (__fish_pack_basename_without_ext $archive)
     echo $basename
 end
 
-function __fish_archive_get_file_size --description 'Get file size in bytes with error handling'
+function __fish_pack_get_file_size --description 'Get file size in bytes with error handling'
     set -l file $argv[1]
 
     if test -f "$file"
@@ -308,7 +313,7 @@ function __fish_archive_get_file_size --description 'Get file size in bytes with
     end
 end
 
-function __fish_archive_human_size --description 'Convert bytes to human-readable format'
+function __fish_pack_human_size --description 'Convert bytes to human-readable format'
     set -l bytes $argv[1]
 
     if test $bytes -lt 1024
@@ -326,12 +331,12 @@ end
 # Enhanced Archive Format Detection
 # ============================================================================
 
-function __fish_archive_detect_format --description 'Enhanced format detection with modern Fish features'
+function __fish_pack_detect_format --description 'Enhanced format detection with modern Fish features'
     set -l file $argv[1]
 
     # Extension-based detection with modern string operations
-    set -l ext (__fish_archive_get_extension $file)
-    set -l ext_format (__fish_archive_get_format_from_extension $ext)
+    set -l ext (__fish_pack_get_extension $file)
+    set -l ext_format (__fish_pack_get_format_from_extension $ext)
 
     if test "$ext_format" != unknown
         echo $ext_format
@@ -339,9 +344,9 @@ function __fish_archive_detect_format --description 'Enhanced format detection w
     end
 
     # MIME type detection
-    set -l mime (__fish_archive_get_mime_type $file)
+    set -l mime (__fish_pack_get_mime_type $file)
     if test -n "$mime"
-        set -l mime_format (__fish_archive_get_format_from_mime $mime)
+        set -l mime_format (__fish_pack_get_format_from_mime $mime)
         if test "$mime_format" != unknown
             echo $mime_format
             return 0
@@ -353,7 +358,7 @@ function __fish_archive_detect_format --description 'Enhanced format detection w
     return 1
 end
 
-function __fish_archive_get_format_from_extension --description 'Get format from file extension'
+function __fish_pack_get_format_from_extension --description 'Get format from file extension'
     set -l ext (string lower -- $argv[1])
 
     # Use modern Fish switch with multiple patterns
@@ -407,7 +412,7 @@ function __fish_archive_get_format_from_extension --description 'Get format from
     end
 end
 
-function __fish_archive_get_format_from_mime --description 'Get format from MIME type'
+function __fish_pack_get_format_from_mime --description 'Get format from MIME type'
     set -l mime (string lower -- $argv[1])
 
     switch $mime
@@ -448,7 +453,7 @@ end
 # Enhanced Smart Format Selection
 # ============================================================================
 
-function __fish_archive_analyze_content --description 'Analyze content to determine optimal compression format'
+function __fish_pack_analyze_content --description 'Analyze content to determine optimal compression format'
     set -l inputs $argv
 
     set -l text_files 0
@@ -457,11 +462,11 @@ function __fish_archive_analyze_content --description 'Analyze content to determ
     set -l total_size 0
 
     # Sample files for analysis (limit to 200 for performance)
-    set -l sample_files (__fish_archive_sample_files $inputs 200)
+    set -l sample_files (__fish_pack_sample_files $inputs 200)
 
     for file in $sample_files
-        set -l mime (__fish_archive_get_mime_type $file)
-        set -l size (__fish_archive_get_file_size $file)
+        set -l mime (__fish_pack_get_mime_type $file)
+        set -l size (__fish_pack_get_file_size $file)
 
         set total_files (math "$total_files + 1")
         set total_size (math "$total_size + $size")
@@ -489,7 +494,7 @@ function __fish_archive_analyze_content --description 'Analyze content to determ
     echo "$text_ratio $size_ratio $total_files $total_size"
 end
 
-function __fish_archive_sample_files --description 'Sample files for content analysis'
+function __fish_pack_sample_files --description 'Sample files for content analysis'
     set -l inputs $argv[1..-2]
     set -l max_files $argv[-1]
 
@@ -516,16 +521,16 @@ function __fish_archive_sample_files --description 'Sample files for content ana
     echo $sampled
 end
 
-function __fish_archive_smart_format --description 'Choose optimal compression format based on content analysis'
+function __fish_pack_smart_format --description 'Choose optimal compression format based on content analysis'
     set -l inputs $argv
 
-    set -l analysis (__fish_archive_analyze_content $inputs)
+    set -l analysis (__fish_pack_analyze_content $inputs)
     set -l text_ratio (echo $analysis | cut -d' ' -f1)
     set -l size_ratio (echo $analysis | cut -d' ' -f2)
-    set -l total_info (__fish_archive_analyze_content $inputs)
+    set -l total_info (__fish_pack_analyze_content $inputs)
     set -l total_files (echo $total_info | awk '{print $3}')
     set -l total_size (echo $total_info | awk '{print $4}')
-    set -l has_pigz (__fish_archive_has_command pigz; and echo 1; or echo 0)
+    set -l has_pigz (__fish_pack_has_command pigz; and echo 1; or echo 0)
 
     # Size thresholds
     set -l HUGE 1073741824 # 1 GiB
@@ -564,7 +569,7 @@ end
 # Enhanced Validation Functions
 # ============================================================================
 
-function __fish_archive_validate_level --description 'Validate compression level for format'
+function __fish_pack_validate_level --description 'Validate compression level for format'
     set -l level $argv[1]
     set -l format $argv[2]
 
@@ -593,16 +598,16 @@ function __fish_archive_validate_level --description 'Validate compression level
     end
 end
 
-function __fish_archive_validate_archive --description 'Validate archive file exists and is readable'
+function __fish_pack_validate_archive --description 'Validate archive file exists and is readable'
     set -l archive $argv[1]
 
     if not test -f "$archive"
-        __fish_archive_log error "Archive file not found: $archive"
+        __fish_pack_log error "Archive file not found: $archive"
         return 1
     end
 
     if not test -r "$archive"
-        __fish_archive_log error "Archive file not readable: $archive"
+        __fish_pack_log error "Archive file not readable: $archive"
         return 1
     end
 
@@ -613,39 +618,39 @@ end
 # Enhanced Hash and Checksum Functions
 # ============================================================================
 
-function __fish_archive_calculate_hash --description 'Calculate file hash with multiple algorithms'
+function __fish_pack_calculate_hash --description 'Calculate file hash with multiple algorithms'
     set -l file $argv[1]
     set -l algorithm $argv[2]
 
     switch $algorithm
         case md5
-            if __fish_archive_has_command md5sum
+            if __fish_pack_has_command md5sum
                 md5sum "$file" | cut -d' ' -f1
-            else if __fish_archive_has_command md5
+            else if __fish_pack_has_command md5
                 md5 -q "$file"
             else
                 return 1
             end
         case sha1
-            if __fish_archive_has_command sha1sum
+            if __fish_pack_has_command sha1sum
                 sha1sum "$file" | cut -d' ' -f1
-            else if __fish_archive_has_command shasum
+            else if __fish_pack_has_command shasum
                 shasum -a 1 "$file" | cut -d' ' -f1
             else
                 return 1
             end
         case sha256
-            if __fish_archive_has_command sha256sum
+            if __fish_pack_has_command sha256sum
                 sha256sum "$file" | cut -d' ' -f1
-            else if __fish_archive_has_command shasum
+            else if __fish_pack_has_command shasum
                 shasum -a 256 "$file" | cut -d' ' -f1
             else
                 return 1
             end
         case sha512
-            if __fish_archive_has_command sha512sum
+            if __fish_pack_has_command sha512sum
                 sha512sum "$file" | cut -d' ' -f1
-            else if __fish_archive_has_command shasum
+            else if __fish_pack_has_command shasum
                 shasum -a 512 "$file" | cut -d' ' -f1
             else
                 return 1
@@ -656,12 +661,12 @@ function __fish_archive_calculate_hash --description 'Calculate file hash with m
 end
 
 # ============================================================================
-# Modern Fish 4.12+ Feature Detection
+# Modern Fish 4.1.2+ Feature Detection
 # ============================================================================
 
-function __fish_archive_check_fish_features --description 'Check for modern Fish features'
-    if not __fish_archive_is_fish_4_12_plus
-        __fish_archive_log warn "Fish version 4.12+ recommended for optimal performance"
+function __fish_pack_check_fish_features --description 'Check for modern Fish features'
+    if not __fish_pack_is_fish_4_1_2_plus
+        __fish_pack_log warn "Fish version 4.1.2+ recommended for optimal performance"
         return 1
     end
     return 0
@@ -671,7 +676,7 @@ end
 # Performance Optimization Helpers
 # ============================================================================
 
-function __fish_archive_optimize_for_size --description 'Optimize settings for file size'
+function __fish_pack_optimize_for_size --description 'Optimize settings for file size'
     set -l file_size $argv[1]
 
     if test $file_size -lt 10485760 # < 10MB
@@ -683,7 +688,7 @@ function __fish_archive_optimize_for_size --description 'Optimize settings for f
     end
 end
 
-function __fish_archive_should_use_parallel --description 'Determine if parallel processing should be used'
+function __fish_pack_should_use_parallel --description 'Determine if parallel processing should be used'
     set -l file_size $argv[1]
     set -l threads $argv[2]
 

@@ -1,4 +1,4 @@
-# Archive environment diagnostic tool for Fish Archive Manager (fish 4.12+)
+# Archive environment diagnostic tool for Fish Archive Manager (fish 4.1.2+)
 # Checks system capabilities, available tools, and configuration
 
 # Load optimized common functions
@@ -69,7 +69,7 @@ Examples:
     end
 
     # Run diagnostics
-    __fish_archive_run_diagnostics $verbose $quiet $fix $export
+    __fish_pack_run_diagnostics $verbose $quiet $fix $export
 end
 
 # Alias for backward compatibility

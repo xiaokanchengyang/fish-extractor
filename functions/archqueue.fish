@@ -1,4 +1,4 @@
-# Task queue for batch compression/extraction (fish 4.12+)
+# Task queue for batch compression/extraction (fish 4.1.2+)
 # Enhanced with logging, locking, and cancellation support
 
 # Load platform helpers for cross-platform compatibility

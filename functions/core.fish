@@ -1,4 +1,4 @@
-# Core utilities for Fish Archive Manager (fish 4.12+)
+# Core utilities for Fish Archive Manager (fish 4.1.2+)
 # Provides shared functions for logging, colors, path handling, format detection, and tool checking
 
 # Load format handlers

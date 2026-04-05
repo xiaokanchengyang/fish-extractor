@@ -69,9 +69,9 @@ function __fish_pack_measure_operation --description 'Measure operation performa
 
     # Log performance
     if test -n "$cpu_pct"
-        __fish_archive_log debug "$operation_name completed in "$duration"s (CPU: "$cpu_pct"%)"
+        __fish_pack_log debug "$operation_name completed in "$duration"s (CPU: "$cpu_pct"%)"
     else
-        __fish_archive_log debug "$operation_name completed in "$duration"s"
+        __fish_pack_log debug "$operation_name completed in "$duration"s"
     end
 
     return $result

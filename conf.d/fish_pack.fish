@@ -1,15 +1,15 @@
-# Fish Archive Manager - Configuration and Initialization (fish 4.12+)
+# Fish Archive Manager - Configuration and Initialization (fish 4.1.2+)
 # Optimized configuration with modern Fish features
 
 # ============================================================================
 # Initialization Guard
 # ============================================================================
 
-if set -q __fish_archive_manager_initialized
+if set -q __fish_pack_manager_initialized
     return
 end
 
-set -g __fish_archive_manager_initialized 1
+set -g __fish_pack_manager_initialized 1
 
 # ============================================================================
 # Default Configuration with Modern Fish Features
@@ -46,17 +46,17 @@ end
 
 # Main commands
 function extract --description 'Extract archives with intelligent format detection'
-    source (dirname (status --current-filename))/../functions/archive_manager.fish
+    source (dirname (status --current-filename))/../functions/fish_pack.fish
     extract $argv
 end
 
 function compress --description 'Create archives with intelligent format selection'
-    source (dirname (status --current-filename))/../functions/archive_manager.fish
+    source (dirname (status --current-filename))/../functions/fish_pack.fish
     compress $argv
 end
 
 function doctor --description 'Diagnose system capabilities and configuration'
-    source (dirname (status --current-filename))/../functions/archive_manager.fish
+    source (dirname (status --current-filename))/../functions/fish_pack.fish
     doctor $argv
 end
 
@@ -86,9 +86,9 @@ end
 # Performance Optimization
 # ============================================================================
 
-# Check for Fish 4.12+ features
-if not string match -q '4.1[2-9]*' (fish --version | string match -r '\d+\.\d+')
-    echo "Warning: Fish Archive Manager works best with Fish 4.12+" >&2
+# Check for Fish 4.1.2+ features
+if not string match -r -q '^(4\.(1\.[2-9]|1\.[1-9]\d|[2-9]\.)|[5-9]\.)' (fish --version | string match -r '\d+\.\d+\.?\d*')
+    echo "Warning: Fish Archive Manager works best with Fish 4.1.2+" >&2
 end
 
 # ============================================================================

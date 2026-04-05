@@ -1,4 +1,4 @@
-# Fish completions for Fish Archive Manager (fish 4.12+)
+# Fish completions for Fish Archive Manager (fish 4.1.2+)
 # Provides intelligent tab completions for extract, compress, and doctor commands
 
 # ============================================================================

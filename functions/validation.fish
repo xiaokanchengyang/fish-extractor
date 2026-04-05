@@ -1,4 +1,4 @@
-# Validation and helper functions for Fish Archive Manager (fish 4.12+)
+# Validation and helper functions for Fish Archive Manager (fish 4.1.2+)
 # Provides common validation, option checking, and utility functions
 
 # Load error handling

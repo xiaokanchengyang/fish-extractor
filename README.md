@@ -8,30 +8,30 @@
 
 [English](README.md) | [简体中文](README_CN.md)
 
-## Quick Start
+## Installation
+
+### Using [Fisher](https://github.com/jorgebucaran/fisher) (Recommended)
 
 ```fish
-# Install using Fisher
 fisher install xiaokanchengyang/fish-pack
-
-# Extract an archive
-extract file.tar.gz
-
-# Create an archive
-compress backup.tar.zst ./mydata
-
-# Check system capabilities
-check
 ```
 
-## Documentation
+> **Note on Name Change**: The project was formerly named `fish-extractor` but has been renamed to `fish-pack`. Ensure you use the updated installation command.
 
-- **[📚 Complete Documentation](docs/)** - All documentation in organized structure
-- **[Complete Usage Guide](docs/USAGE.md)** - Detailed usage examples and advanced features
-- **[Installation Guide](docs/INSTALL.md)** - Step-by-step installation instructions
-- **[Project Structure](docs/PROJECT_STRUCTURE.md)** - Code organization and development guide
-- **[Security Policy](SECURITY.md)** - Security features and policies
-- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
+### Requirements
+
+- **fish** >= 4.1.2
+- **file** (MIME type detection)
+- **tar**, **gzip** (basic functionality)
+
+### Recommended Dependencies
+
+For optimal performance and broad format support, install the following packages:
+
+- **Arch Linux**: `pacman -S file tar gzip bzip2 xz zstd lz4 unzip zip p7zip bsdtar unrar pv pigz pbzip2`
+- **Ubuntu / Debian**: `apt-get install file tar gzip bzip2 xz-utils zstd liblz4-tool unzip zip p7zip-full libarchive-tools unrar pv pigz pbzip2`
+- **macOS (Homebrew)**: `brew install gnu-tar gzip bzip2 xz zstd lz4 p7zip libarchive unrar pv pigz pbzip2`
+- **Windows (MSYS2)**: `pacman -S file tar gzip bzip2 xz zstd lz4 unzip zip p7zip libarchive`
 
 ## Key Features
 
@@ -40,62 +40,106 @@ check
 - 🚀 **High Performance** - Multi-threaded with parallel tools (pigz, pbzip2, zstd, xz).
 - 📦 **Modern Formats** - tar.xz, tar.zst, tar.lz4, single-file xz/zst/lz4/gz.
 - 🧰 **Cross-platform Consistency** - Auto-detect tools; macOS/Linux/Windows (MSYS2) guidance.
-- 🎨 **Beautiful Output** - Progress bars with ETA/rate/avg, CPU utilization summary.
-- 🔐 **Encryption Support** - Password-protected archives for zip and 7z.
-- 🧪 **Testing & Verification** - Built-in integrity checking and checksum verification.
-- 💾 **Backup Support** - Automatic backup before extraction.
-- ✂️ **Archive Splitting** - Split large archives into manageable parts.
 - 📊 **Batch Queue** - `archqueue` runs tasks sequentially or in parallel.
 
-## Commands
+## Usage Guide
 
-- **`extract`** - Extract archives with smart format detection and security verification.
-- **`compress`** - Create archives with intelligent compression.
-- **`check`** - (formerly `doctor`) Diagnose system capabilities and missing tools.
-- **`archqueue`** - Batch queue for compress/extract tasks.
+Fish Pack provides four main commands: `extract`, `compress`, `archqueue`, and `check`.
 
-## Quick Examples
+### 1. Extract Archives (`extract`)
+
+Intelligently extracts archives with automatic format detection.
 
 ```fish
-# Extract archives
-extract file.tar.gz                    # Extract to ./file/
-extract -d output/ archive.zip         # Extract to ./output/
-extract --strip 1 dist.tar.xz          # Remove top-level directory
-extract -p secret encrypted.7z         # Extract with password
+# Extract to default location (./filename/)
+extract archive.tar.gz
 
-# Create archives
-compress backup.tar.zst ./data         # Fast compression with zstd
-compress -F tar.xz -L 9 logs.tar.xz    # Maximum compression
-compress --smart output.auto ./project # Auto-select best format
-compress -e -p secret secure.zip docs/ # Create encrypted archive
+# Extract to specific directory
+extract -d /path/to/output archive.zip
 
-# System diagnostics
-check                                  # Check system capabilities
-check -v                               # Detailed information
-check --fix                            # Get installation suggestions
+# Extract multiple archives
+extract *.tar.gz
+
+# Strip top-level directory (useful for GitHub releases)
+extract --strip 1 project-v1.0.tar.gz
+
+# Extract password-protected archive
+extract -p "mypassword" secure.zip
+
+# List contents without extracting
+extract --list archive.tar.gz
 ```
 
-## Requirements
+### 2. Create Archives (`compress`)
 
-- **fish** >= 4.12
-- **file** (MIME type detection)
-- **tar**, **gzip** (basic functionality)
+Creates archives with smart format selection and optimization.
 
-See [docs/INSTALL.md](docs/INSTALL.md) for complete requirements and installation instructions.
+```fish
+# Automatically select optimal format based on contents
+compress --smart output.auto ./mydata
+
+# Detect format from output filename
+compress backup.tar.zst ./data
+
+# Maximum compression (tar.xz)
+compress -F tar.xz -L 9 logs.tar.xz /var/log
+
+# Create encrypted ZIP
+compress -e -p secret secure.zip docs/
+
+# Include/exclude specific files
+compress -i '*.txt' -x '*.tmp' docs.zip .
+```
+
+### 3. Batch Queue (`archqueue`)
+
+Runs batch compress/extract tasks sequentially or in parallel.
+
+```fish
+# Sequential (default)
+archqueue \
+  'compress::backup.tzst::src/ docs/' \
+  'extract::release.zip::dist'
+
+# Parallel with up to 3 concurrent tasks
+archqueue --parallel 3 \
+  'compress::a.tzst::a/' \
+  'compress::b.tzst::b/' \
+  'extract::x.zip::xdir'
+```
+
+### 4. System Check (`check`)
+
+Diagnoses your system's archive handling capabilities and suggests fixes.
+
+```fish
+check        # Basic system check
+check -v     # Detailed diagnostic
+check --fix  # Get installation recommendations
+```
 
 ## Configuration
 
+You can customize Fish Pack by setting the following environment variables in your `~/.config/fish/config.fish`:
+
 ```fish
-# Set in ~/.config/fish/config.fish
-set -Ux FISH_ARCHIVE_COLOR auto
-set -Ux FISH_ARCHIVE_PROGRESS auto
-set -Ux FISH_ARCHIVE_DEFAULT_THREADS 8
-set -Ux FISH_ARCHIVE_LOG_LEVEL info
+# Color output: auto (default), always, never
+set -Ux FISH_PACK_COLOR auto
+
+# Progress indicators: auto (default), always, never
+set -Ux FISH_PACK_PROGRESS auto
+
+# Default thread count (default: CPU cores)
+set -Ux FISH_PACK_DEFAULT_THREADS 8
+
+# Logging level: debug, info (default), warn, error
+set -Ux FISH_PACK_LOG_LEVEL info
 ```
 
-## What's New
+## Contributing
 
-- **Strict Security**: Archives with unsafe paths (e.g. `../`) are now skipped by default.
-- **Unified Logic**: Core logic split into `common/` for better maintainability.
-- **Check Command**: `doctor` renamed to `check` for clarity (alias preserved).
-- **Smart compression**: Enhanced auto-selection strategy.
+Contributions are welcome! Feel free to submit issues or pull requests.
+
+## License
+
+MIT License - see the LICENSE file for details.

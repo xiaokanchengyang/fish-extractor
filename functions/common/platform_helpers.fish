@@ -1,4 +1,4 @@
-# Platform detection and system utilities for Fish Archive Manager (fish 4.12+)
+# Platform detection and system utilities for Fish Archive Manager (fish 4.1.2+)
 # Provides cross-platform compatibility for stat, nproc, and other system commands
 
 # ============================================================================
@@ -272,7 +272,7 @@ function _create_temp_file --description 'Create temporary file with proper perm
         # Unix-like systems - always use mktemp for security
         set -l tmpdir (test -d "$TMPDIR"; and echo "$TMPDIR"; or echo "/tmp")
         mktemp "$tmpdir/$prefix.XXXXXX" 2>/dev/null; or begin
-            __fish_archive_log error "mktemp failed - install coreutils for secure temp files"
+            __fish_pack_log error "mktemp failed - install coreutils for secure temp files"
             return 1
         end
     end
@@ -296,7 +296,7 @@ function _create_temp_dir --description 'Create temporary directory with proper 
         # Unix-like systems - always use mktemp for security
         set -l tmpdir (test -d "$TMPDIR"; and echo "$TMPDIR"; or echo "/tmp")
         mktemp -d "$tmpdir/$prefix.XXXXXX" 2>/dev/null; or begin
-            __fish_archive_log error "mktemp failed - install coreutils for secure temp directories"
+            __fish_pack_log error "mktemp failed - install coreutils for secure temp directories"
             return 1
         end
     end

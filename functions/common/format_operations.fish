@@ -1,4 +1,4 @@
-# Common format operations for Fish Archive Manager (fish 4.12+)
+# Common format operations for Fish Archive Manager (fish 4.1.2+)
 # Provides shared functions for format detection, validation, and command selection
 
 # Load core utilities
@@ -37,7 +37,7 @@ function detect_archive_format --description 'Detect archive format with fallbac
     return 1
 end
 
-function __fish_archive_validate_format_support --description 'Validate format is supported for operation'
+function __fish_pack_validate_format_support --description 'Validate format is supported for operation'
     set -l format $argv[1]
     set -l operation $argv[2] # compress or extract
 

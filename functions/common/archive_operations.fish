@@ -1,4 +1,4 @@
-# Common archive operations for Fish Archive Manager (fish 4.12+)
+# Common archive operations for Fish Archive Manager (fish 4.1.2+)
 # Provides shared functions for compression and extraction operations
 
 # Load core utilities

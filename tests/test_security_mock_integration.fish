@@ -4,7 +4,7 @@ source functions/extract.fish
 source functions/common/security_helpers.fish
 
 # Mock logging to capture output
-function __fish_archive_log
+function __fish_pack_log
     echo "LOG: $argv"
 end
 
@@ -15,26 +15,26 @@ function __fish_pack_list_archive_members
 end
 
 # Mock dependencies
-function __fish_archive_get_file_size
+function __fish_pack_get_file_size
     echo 100
 end
 # Validate archive usually checks existence, we will create file but also mock this just in case logic is complex
-function __fish_archive_validate_archive
+function __fish_pack_validate_archive
     return 0
 end
-function __fish_archive_detect_format
+function __fish_pack_detect_format
     echo tar
 end
-function __fish_archive_prepare_extraction_args
+function __fish_pack_prepare_extraction_args
     echo true
 end
 function __fish_pack_safe_exec
     echo "EXEC: $argv"
 end
-function __fish_archive_default_extract_dir
+function __fish_pack_default_extract_dir
     echo output
 end
-function __fish_archive_handle_destination_naming
+function __fish_pack_handle_destination_naming
     echo output
 end
 # validate_inputs checks existence. We will create the file.
